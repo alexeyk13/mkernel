@@ -150,5 +150,8 @@
 #define SDIO_DMA_STREAM								DMA_STREAM_3
 //#define SDIO_DMA_STREAM								DMA_STREAM_6
 
+//--------------------- hw rand enable ---------------------------------------
+#define HW_RAND
+
 #endif // HW_CONFIG_STM32_F2
 

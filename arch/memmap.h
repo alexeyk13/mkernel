@@ -38,7 +38,7 @@ extern unsigned int	_sys_end;
 #include "memmap_custom.h"
 #endif
 #ifdef CORTEX_M3
-#include "memmap_cortexm.h"
+#include "memmap_cortex_m3.h"
 #endif
 
 #endif // MEMMAP_H

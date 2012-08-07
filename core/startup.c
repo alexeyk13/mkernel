@@ -40,6 +40,7 @@
 #ifndef  NVIC_PRESENT
 #include "irq.h"
 #endif //NVIC_PRESENT
+#include "rand.h"
 
 extern void application_init();
 
@@ -66,4 +67,7 @@ void startup()
 
 	//user application initialize
 	application_init();
+
+	//initialize seed
+	srand();
 }
