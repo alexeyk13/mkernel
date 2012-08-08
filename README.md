@@ -48,6 +48,10 @@ ARM7 features:
 
 History
 -------
+0.1.2
+- added examples for STM32 F2
+- optimized software rand
+- renamed all .s to .S
 
 0.1.1
 - added support of software random number generation
