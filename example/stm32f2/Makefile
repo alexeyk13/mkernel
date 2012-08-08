@@ -17,7 +17,7 @@ MCU_NAME					= STM32F215RG
 CMSIS_DEVICE			= STM32F2xx
 #CMSIS_DEVICE			= STM32F10x
 #CMSIS_DEVICE			= STM32F4xx
-TARGET_NAME				= stm32usb
+TARGET_NAME				= stm32f2
 #----------------------------------------------------------
 BUILD_DIR				= build
 OUTPUT_DIR				= output

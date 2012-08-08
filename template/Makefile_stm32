@@ -38,7 +38,7 @@ INCLUDE_FOLDERS		= $(KERNEL)/lib config $(KERNEL)/core $(DRVS) $(MOD) $(OEM_LIBS
 INCLUDES					= $(INCLUDE_FOLDERS:%=-I%)
 VPATH					  += $(INCLUDE_FOLDERS) $(BUILD_DIR)
 #----------------------------------------------------------
-SRC_AS					= delay_cortex_m3.s
+SRC_AS					= delay_cortex_m3.S
 SRC_AS_C					= startup_cortexm.S
 
 SRC_C						= cortex_m3.c
@@ -53,7 +53,7 @@ SRC_C					  += dlist.c time.c printf.c rand.c
 SRC_C					  += console.c dbg_console_private.c dbg_console.c
 #SRC_C					  += main.c
 
-OBJ						= $(SRC_AS_C:%.S=%.o) $(SRC_AS:%.s=%.o) $(SRC_C:%.c=%.o)
+OBJ						= $(SRC_AS_C:%.S=%.o) $(SRC_AS:%.S=%.o) $(SRC_C:%.c=%.o)
 #----------------------------------------------------------
 DEFINES					= -DHSE_VALUE=$(EXT_OSCILLATOR_FREQ) -D$(MCU_NAME)
 PWD						= $(shell pwd)

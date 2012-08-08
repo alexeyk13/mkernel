@@ -32,4 +32,3 @@ unsigned int rand()
 #endif //RANDOM_DEBUG
 	return 0;
 }
-

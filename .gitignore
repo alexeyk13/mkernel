@@ -1,0 +1,5 @@
+example/stm32f2/stm32f2.pro
+example/stm32f2/stm32f2.pro.user
+example/stm32f2/build
+example/stm32f2/build/*.*
+example/stm32f2/build/*
