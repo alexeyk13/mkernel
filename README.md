@@ -48,6 +48,12 @@ ARM7 features:
 
 History
 -------
+0.1.3
+
++ pin keyboard module with debounce logic
+! sys_alloc, sys_alloc_aligned, sys_free now supported in SYS context
++ push method for debug console
+
 0.1.2
 - added examples for STM32 F2
 - optimized software rand
