@@ -31,7 +31,7 @@ CMSIS_DEVICE_DIR		= $(CMSIS_DIR)/Device/ST/$(CMSIS_DEVICE)
 OEM_LIBS					= $(CMSIS_DIR)/Include $(CMSIS_DEVICE_DIR)/Include
 ARCH						= arch arch/cortex_m3 arch/cortex_m3/stm32f2xx $(KERNEL)/arch $(KERNEL)/arch/cortex_m3 $(KERNEL)/arch/cortex_m3/stm
 DRVS						= $(KERNEL)/drv_if
-MOD						= $(KERNEL)/mod/console $(KERNEL)/mod/dbg_console
+MOD						= $(KERNEL)/mod/console $(KERNEL)/mod/dbg_console $(KERNEL)/mod/keyboard
 TASKS						= 
 INCLUDE_FOLDERS		= $(KERNEL)/lib config $(KERNEL)/core $(DRVS) $(MOD) $(OEM_LIBS) $(TASKS) $(ARCH)
 
@@ -50,7 +50,7 @@ SRC_C					  += mutex.c mutex_private.c event.c event_private.c sem.c sem_private
 #lib
 SRC_C					  += dlist.c time.c printf.c rand.c
 #mod
-SRC_C					  += console.c dbg_console_private.c dbg_console.c
+SRC_C					  += console.c dbg_console_private.c dbg_console.c keyboard.c
 #SRC_C					  += main.c
 
 OBJ						= $(SRC_AS_C:%.S=%.o) $(SRC_AS:%.S=%.o) $(SRC_C:%.c=%.o)
@@ -61,7 +61,7 @@ MCU						= -mcpu=cortex-m3 -mthumb
 MCU_CC					= $(MCU) -D__thumb2__=1 -mtune=cortex-m3 -msoft-float -mapcs-frame $(DEFINES)
 FLAGS_AS					= $(MCU)
 #USB core, provided by ST doesn't support strict aliasing, we should disable it.
-FLAGS_CC					= $(INCLUDES) -I. -O$(OPTIMIZATION) -Wall -c -fmessage-length=0 $(MCU_CC) -fdata-sections -ffunction-sections -fno-hosted -fno-builtin  -nostdlib -nodefaultlibs -fno-strict-aliasing
+FLAGS_CC					= $(INCLUDES) -I. -O$(OPTIMIZATION) -Wall -c -fmessage-length=0 $(MCU_CC) -fdata-sections -ffunction-sections -fno-hosted -fno-builtin  -nostdlib -nodefaultlibs
 FLAGS_LD					= -Xlinker --gc-sections $(MCU)
 #----------------------------------------------------------
 all: $(TARGET_NAME).elf

@@ -133,6 +133,12 @@ void console_putc(CONSOLE* console, char c)
 	console_write(console, &c, 1);
 }
 
+void console_push(CONSOLE* console)
+{
+	while (!rb_is_empty(&console->tx_buf))
+		uart_write_wait(console->h.port);
+}
+
 int console_read(CONSOLE* console, char* buf, int size_max)
 {
 	console->h.rx_buf = NULL;

@@ -45,7 +45,6 @@ static inline EVENT* svc_event_create()
 	}
 	else
 		fatal_error(ERROR_MEM_OUT_OF_SYSTEM_MEMORY, EVENT_NAME);
-
 	return event;
 }
 

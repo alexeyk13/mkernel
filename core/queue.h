@@ -47,7 +47,18 @@ void* queue_pull_us(HANDLE queue, unsigned int timeout_us);
 bool queue_is_empty(HANDLE queue);
 bool queue_is_full(HANDLE queue);
 void queue_release_buffer(HANDLE queue, void* buf);
-
 void queue_destroy(HANDLE queue);
+
+HANDLE messages_create(unsigned int messages_count);
+bool messages_post(HANDLE messages, unsigned int message, TIME* timeout);
+bool messages_post_ms(HANDLE messages, unsigned int message, unsigned int timeout_ms);
+bool messages_post_us(HANDLE messages, unsigned int message, unsigned int timeout_us);
+unsigned int messages_peek(HANDLE messages, TIME* timeout);
+unsigned int messages_peek_ms(HANDLE messages, unsigned int timeout_ms);
+unsigned int messages_peek_us(HANDLE messages, unsigned int timeout_us);
+
+#define messages_is_empty		queue_is_empty
+#define messages_is_full		queue_is_full
+#define messages_destroy		queue_destroy
 
 #endif // QUEUE_H

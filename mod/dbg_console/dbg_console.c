@@ -39,3 +39,8 @@ void dbg_write(const char* const buf, int size)
 {
 	sys_call(DBG_WRITE, (unsigned int)buf, (unsigned int)size, 0);
 }
+
+void dbg_push()
+{
+	sys_call(DBG_PUSH, 0, 0, 0);
+}

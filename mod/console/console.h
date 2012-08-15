@@ -51,6 +51,7 @@ void console_destroy(CONSOLE* console);
 void console_write(CONSOLE* console, char* buf, int size);
 void console_writeln(CONSOLE* console, char* buf);
 void console_putc(CONSOLE* console, char c);
+void console_push(CONSOLE* console);
 int console_read(CONSOLE* console, char* buf, int size_max);
 int console_readln(CONSOLE* console, char* buf, int size_max);
 char console_getc(CONSOLE* console);

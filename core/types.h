@@ -40,5 +40,6 @@
 #define INFINITE							0x0
 
 #define WORD_SIZE							sizeof(unsigned int)
+#define WORD_SIZE_BITS					(WORD_SIZE * 8)
 
 #endif /*_TYPES_H_*/

@@ -34,6 +34,7 @@
 #include "kernel_config.h"
 #include "types.h"
 #include "printf.h"
+#include "dbg_console.h"
 
 #if (KERNEL_MARKS)
 #include "magic.h"
@@ -42,7 +43,7 @@
 #if (KERNEL_DEBUG)
 #include "error.h"
 
-#define HALT()											for (;;) {}
+#define HALT()											{dbg_push(); for (;;) {}}
 #define ASSERT(cond)									if (!(cond))	{printf("ASSERT at %s, line %d\n\r", __FILE__, __LINE__);	HALT();}
 
 #else

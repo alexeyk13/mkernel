@@ -100,3 +100,85 @@ void queue_destroy(HANDLE queue)
 {
 	sys_call(QUEUE_DESTROY, (unsigned int)queue, 0, 0);
 }
+
+HANDLE messages_create(unsigned int messages_count)
+{
+	return sys_call(QUEUE_CREATE, sizeof(unsigned int), messages_count, WORD_SIZE);
+}
+
+bool messages_post(HANDLE messages, unsigned int message, TIME* timeout)
+{
+	unsigned int* buf = (unsigned int*)sys_call(QUEUE_ALLOCATE_BUFFER, (unsigned int)messages, (unsigned int)timeout, 0);
+	if (buf)
+	{
+		*buf = message;
+		sys_call(QUEUE_PUSH, (unsigned int)messages, (unsigned int)buf, 0);
+	}
+	return buf != NULL;
+}
+
+bool messages_post_ms(HANDLE messages, unsigned int message, unsigned int timeout_ms)
+{
+	TIME timeout;
+	ms_to_time(timeout_ms, &timeout);
+	unsigned int* buf = (unsigned int*)sys_call(QUEUE_ALLOCATE_BUFFER, (unsigned int)messages, (unsigned int)&timeout, 0);
+	if (buf)
+	{
+		*buf = message;
+		sys_call(QUEUE_PUSH, (unsigned int)messages, (unsigned int)buf, 0);
+	}
+	return buf != NULL;
+}
+
+bool messages_post_us(HANDLE messages, unsigned int message, unsigned int timeout_us)
+{
+	TIME timeout;
+	us_to_time(timeout_us, &timeout);
+	unsigned int* buf = (unsigned int*)sys_call(QUEUE_ALLOCATE_BUFFER, (unsigned int)messages, (unsigned int)&timeout, 0);
+	if (buf)
+	{
+		*buf = message;
+		sys_call(QUEUE_PUSH, (unsigned int)messages, (unsigned int)buf, 0);
+	}
+	return buf != NULL;
+}
+
+unsigned int messages_peek(HANDLE messages, TIME* timeout)
+{
+	unsigned int* buf = (unsigned int*)sys_call(QUEUE_PULL, (unsigned int)messages, (unsigned int)timeout, 0);
+	unsigned int message = 0;
+	if (buf)
+	{
+		message = *buf;
+		sys_call(QUEUE_RELEASE_BUFFER, (unsigned int)messages, (unsigned int)buf, 0);
+	}
+	return message;
+}
+
+unsigned int messages_peek_ms(HANDLE messages, unsigned int timeout_ms)
+{
+	TIME timeout;
+	ms_to_time(timeout_ms, &timeout);
+	unsigned int* buf = (unsigned int*)sys_call(QUEUE_PULL, (unsigned int)messages, (unsigned int)&timeout, 0);
+	unsigned int message = 0;
+	if (buf)
+	{
+		message = *buf;
+		sys_call(QUEUE_RELEASE_BUFFER, (unsigned int)messages, (unsigned int)buf, 0);
+	}
+	return message;
+}
+
+unsigned int messages_peek_us(HANDLE messages, unsigned int timeout_us)
+{
+	TIME timeout;
+	us_to_time(timeout_us, &timeout);
+	unsigned int* buf = (unsigned int*)sys_call(QUEUE_PULL, (unsigned int)messages, (unsigned int)&timeout, 0);
+	unsigned int message = 0;
+	if (buf)
+	{
+		message = *buf;
+		sys_call(QUEUE_RELEASE_BUFFER, (unsigned int)messages, (unsigned int)buf, 0);
+	}
+	return message;
+}

@@ -33,5 +33,6 @@
 
 
 void dbg_write(const char *const buf, int size);
+void dbg_push();
 
 #endif // DBG_CONSOLE_H

@@ -127,7 +127,8 @@ typedef enum {
 }MEM_SYS_CALLS;
 
 typedef enum {
-	DBG_WRITE = SYS_CALL_DBG
+	DBG_WRITE = SYS_CALL_DBG,
+	DBG_PUSH
 }DBG_SYS_CALLS;
 
 #endif // SYS_CALLS_H

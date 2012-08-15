@@ -201,7 +201,7 @@ void uart_write_wait(UART_CLASS port)
 		while ((USART[port]->SR & USART_SR_TXE) == 0) {}
 		CRITICAL_ENTER;
 		//not handled in isr, do it manually
-		if (!_uart_handlers[port]->isr_active)
+		if ((USART[port]->SR & USART_SR_TXE) && !_uart_handlers[port]->isr_active)
 		{
 			USART[port]->DR = _uart_handlers[port]->write_buf[0];
 			_uart_handlers[port]->write_buf++;

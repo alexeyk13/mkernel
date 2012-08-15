@@ -112,4 +112,9 @@
 
 #define SDIO_IRQ_PRIORITY						6
 
+//----------------------------------- keyboard ----------------------------------------------------------------
+#define KEYBOARD_DEBOUNCE_MS					10
+#define KEYBOARD_POLL_MS						100
+#define KEYBOARD_THREAD_PRIORITY				10
+
 #endif // KERNEL_CONFIG_H

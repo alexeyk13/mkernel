@@ -93,6 +93,10 @@ unsigned int svc_dbg_handler(unsigned int num, unsigned int param1, unsigned int
 		if (_dbg_console)
 			console_write(_dbg_console, (char*)param1, (int)param2);
 		break;
+	case DBG_PUSH:
+		if (_dbg_console)
+			console_push(_dbg_console);
+		break;
 	default:
 		error_value(ERROR_GENERAL_INVALID_SYS_CALL, num);
 	}

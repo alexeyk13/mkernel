@@ -141,7 +141,7 @@ void UsageFault_Handler(void)
 	if (SCB->CFSR & CFSR_DIVBYZERO)
 		error_thread(ERROR_GENERAL_DIVISION_BY_ZERO);
 	else if (SCB->CFSR & CFSR_UNALIGNED)
-		error_thread(ERROR_GENERAL_UNALIGNED_ACCESS);
+		fatal_error(ERROR_GENERAL_UNALIGNED_ACCESS, NULL);
 	else if (SCB->CFSR & CFSR_NOCP)
 		error_thread(ERROR_GENERAL_NO_COPROCESSOR);
 	else if (SCB->CFSR & (CFSR_UNDEFINSTR | CFSR_INVPC))

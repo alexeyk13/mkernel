@@ -65,23 +65,27 @@ void mem_init()
 
 void* sys_alloc_aligned(int size, int align)
 {
-	CHECK_CONTEXT(SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
+	CHECK_CONTEXT(IRQ_CONTEXT | SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
+	void* ptr = NULL;
 	CRITICAL_ENTER;
-	return mem_pool_alloc(&_sys_pool, size, align);
+	ptr = mem_pool_alloc(&_sys_pool, size, align);
 	CRITICAL_LEAVE;
+	return ptr;
 }
 
 void* sys_alloc(int size)
 {
-	CHECK_CONTEXT(SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
+	CHECK_CONTEXT(IRQ_CONTEXT | SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
+	void* ptr = NULL;
 	CRITICAL_ENTER;
-	return mem_pool_alloc(&_sys_pool, size, WORD_SIZE);
+	ptr = mem_pool_alloc(&_sys_pool, size, WORD_SIZE);
 	CRITICAL_LEAVE;
+	return ptr;
 }
 
 void sys_free(void *ptr)
 {
-	CHECK_CONTEXT(SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
+	CHECK_CONTEXT(IRQ_CONTEXT | SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
 	CRITICAL_ENTER;
 	mem_pool_free(&_sys_pool, ptr);
 	CRITICAL_LEAVE;
@@ -189,7 +193,6 @@ static inline void svc_mem_stat()
 
 unsigned int svc_mem_handler(unsigned int num, unsigned int param1, unsigned int param2)
 {
-	CHECK_CONTEXT(SUPERVISOR_CONTEXT | IRQ_CONTEXT | SYSTEM_CONTEXT);
 	unsigned int res = 0;
 	switch (num)
 	{
@@ -199,7 +202,6 @@ unsigned int svc_mem_handler(unsigned int num, unsigned int param1, unsigned int
 	case MEM_FREE:
 		svc_free((void*)param1);
 		break;
-
 	case POOL_ALLOCATE:
 		res = (unsigned int)svc_allocate_pool((char*)param1, (int)param2);
 		break;
