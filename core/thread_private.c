@@ -94,6 +94,7 @@ void abnormal_exit()
 
 void svc_thread_timeout(void* param)
 {
+	CRITICAL_ENTER;
 	THREAD* thread = param;
 	thread->flags &= ~THREAD_TIMER_ACTIVE;
 	//say sync object to release us
@@ -119,6 +120,7 @@ void svc_thread_timeout(void* param)
 	//patch return value
 	thread_patch_context(thread, false);
 	svc_thread_wakeup(thread);
+	CRITICAL_LEAVE;
 }
 
 const char* svc_thread_name(THREAD* thread)
@@ -387,8 +389,6 @@ void svc_thread_set_current_priority(THREAD* thread, unsigned int priority)
 			thread_remove_from_active_list(thread);
 			thread->current_priority = priority;
 			thread_add_to_active_list(thread);
-			if (_next_thread == _active_thread)
-				_next_thread = NULL;
 			if (_next_thread)
 				pend_switch_context();
 			break;
@@ -416,7 +416,7 @@ static inline void svc_thread_set_priority(THREAD* thread, unsigned int priority
 	svc_thread_set_current_priority(thread, svc_mutex_calculate_owner_priority(thread));
 }
 
-static inline void svc_thread_destroy(THREAD* thread)
+static void svc_thread_destroy(THREAD* thread)
 {
 	CHECK_MAGIC(thread, MAGIC_THREAD, THREAD_NAME(thread));
 	//we cannot destroy IDLE thread
@@ -464,10 +464,20 @@ static inline void svc_thread_destroy(THREAD* thread)
 	sys_free(thread);
 }
 
+void svc_thread_destroy_current()
+{
+	svc_thread_destroy(_current_thread);
+}
+
 void svc_thread_sleep(TIME* time, THREAD_SYNC_TYPE sync_type, void *sync_object)
 {
-	CHECK_CONTEXT(SUPERVISOR_CONTEXT);
 	THREAD* thread = _current_thread;
+	if (get_context() != SUPERVISOR_CONTEXT)
+	{
+		printf("context error for thread: %s, sync type: %d\n\r", THREAD_NAME(thread), sync_type);
+	}
+	CHECK_CONTEXT(SUPERVISOR_CONTEXT);
+////	THREAD* thread = _current_thread;
 	CHECK_MAGIC(thread, MAGIC_THREAD, THREAD_NAME(thread));
 	//idle thread cannot sleep or be locked by mutex
 	if (thread == _idle_thread)
@@ -628,7 +638,7 @@ unsigned int svc_thread_handler(unsigned int num, unsigned int param1, unsigned 
 		svc_thread_unfreeze((THREAD*)param1);
 		break;
 	case THREAD_FREEZE:
-		svc_thread_unfreeze((THREAD*)param1);
+		svc_thread_freeze((THREAD*)param1);
 		break;
 	case THREAD_GET_CURRENT:
 		res = (unsigned int)svc_thread_get_current();

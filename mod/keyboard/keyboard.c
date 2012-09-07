@@ -1,6 +1,33 @@
+/*
+	M-Kernel - embedded RTOS
+	Copyright (c) 2011-2012, Alexey Kramarenko
+	All rights reserved.
+
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions are met:
+
+	1. Redistributions of source code must retain the above copyright notice, this
+		list of conditions and the following disclaimer.
+	2. Redistributions in binary form must reproduce the above copyright notice,
+		this list of conditions and the following disclaimer in the documentation
+		and/or other materials provided with the distribution.
+
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+	ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+	WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+	DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+	ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+	ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include "keyboard.h"
 #include "mem_private.h"
 #include "queue.h"
+#include "event.h"
 #include "thread.h"
 #include "dbg.h"
 #include "string.h"
@@ -16,6 +43,7 @@ typedef struct {
 	char* active_keys;
 	HANDLE thread;
 	HANDLE messages;
+	HANDLE key_event;
 }KEYBOARD;
 
 void keyboard_thread(void* param)
@@ -39,6 +67,7 @@ void keyboard_thread(void* param)
 					keyboard->active_keys[i / 8] |= (1 << (i & 7));
 					if (!messages_is_full(keyboard->messages))
 						messages_post_ms(keyboard->messages, KEY_SET_VALID(KEY_SET_PRESSED(i)), INFINITE);
+					event_set(keyboard->key_event);
 				}
 			}
 			//start debouncing
@@ -56,6 +85,7 @@ void keyboard_thread(void* param)
 				keyboard->active_keys[i / 8] &= ~(1 << (i & 7));
 				if (!messages_is_full(keyboard->messages))
 					messages_post_ms(keyboard->messages, KEY_SET_VALID(i), INFINITE);
+				event_set(keyboard->key_event);
 			}
 		}
 		sleep_ms(debouncing ? KEYBOARD_DEBOUNCE_MS : KEYBOARD_POLL_MS);
@@ -83,6 +113,7 @@ HANDLE keyboard_create(KEYBOARD_CREATE_PARAMS *params, unsigned int priority)
 		for (i = 0; i < keyboard->keys_count; ++i)
 			gpio_enable_pin(keyboard->keys[i], keyboard->flags & KEYBOARD_FLAGS_PULL ? keyboard->flags & KEYBOARD_FLAGS_ACTIVE_LO ? PIN_MODE_IN_PULLUP : PIN_MODE_IN_PULLDOWN : PIN_MODE_IN);
 		keyboard->messages = messages_create(params->queue_size);
+		keyboard->key_event = event_create();
 		keyboard->thread = thread_create_and_run(KEYBOARD_TEXT, 32, priority, keyboard_thread, keyboard);
 	}
 	else
@@ -94,6 +125,7 @@ void keyboard_destroy(HANDLE handle)
 {
 	KEYBOARD* keyboard = (KEYBOARD*)handle;
 	thread_destroy(keyboard->thread);
+	event_destroy(keyboard->key_event);
 	messages_destroy(keyboard->messages);
 	int i;
 	for (i = 0; i < keyboard->keys_count; ++i)
@@ -117,4 +149,15 @@ KEY keyboard_read(HANDLE handle, unsigned int timeout_ms)
 {
 	KEYBOARD* keyboard = (KEYBOARD*)handle;
 	return (KEY)messages_peek_ms(keyboard->messages, timeout_ms);
+}
+
+bool keyboard_wait_for_key(HANDLE handle, unsigned int timeout_ms)
+{
+	KEYBOARD* keyboard = (KEYBOARD*)handle;
+	if (!keyboard_has_messages(handle))
+	{
+		event_clear(keyboard->key_event);
+		return event_wait_ms(keyboard->key_event, timeout_ms);
+	}
+	return true;
 }

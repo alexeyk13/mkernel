@@ -48,6 +48,16 @@ ARM7 features:
 
 History
 -------
+0.1.4
++ new module: software timers, running in independent thread
++ keyboard module new functions: keyboard_wait_for_key, keyboard_has_messages
+! exception handling improved: 
+	- detection of caller context (SYS/thread), instruction address, caused problem
+	- if thread context, thread will be terminated, if SYS, system will be restarted
+	- SVC call while interrupts are disabled error decoded and processed, instead of 
+	  general hard fault
+	- configurable option to halt system on fatal error, instead of rebooting
+
 0.1.3
 
 + pin keyboard module with debounce logic

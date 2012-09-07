@@ -84,6 +84,10 @@
 	.extern _sys_bss
 	.extern _sys_bss_end
 
+	.extern on_hard_fault
+	.extern on_mem_manage
+	.extern on_bus_fault
+	.extern on_usage_fault
 	.extern sys_handler
 	.extern startup
 	.extern main
@@ -236,6 +240,38 @@ svc_stack_fill:
 	.thumb
 
 /*********************** exception vectors handlers *********************/
+.macro exception_enter
+	mov	r0, lr
+	cmp	r0, 0xfffffffd
+	bne	1f
+	mrs	r1, psp
+	b		2f
+1:
+	mrs	r1, msp
+2:
+.endm
+
+
+	.thumb_func
+HardFault_Handler:
+	exception_enter
+	b	on_hard_fault
+
+	.thumb_func
+MemManage_Handler:
+	exception_enter
+	b	on_mem_manage
+
+	.thumb_func
+BusFault_Handler:
+	exception_enter
+	b	on_bus_fault
+
+	.thumb_func
+UsageFault_Handler:
+	exception_enter
+	b	on_usage_fault
+
 	.thumb_func
 SVC_Handler:
 	mrs	r12, psp
@@ -252,6 +288,7 @@ SVC_Handler:
 	.thumb_func
 PendSV_Handler:
 	/*save*/
+	cpsid	i
 	ldr	r3, =_active_thread				@_active_thread will be NULL on startup/task destroy
 	ldr	r3, [r3]
 	cmp	r3, #0
@@ -275,6 +312,7 @@ load_context:
 	mov	r3, #0
 	str	r3, [r0]
 
+	cpsie i
 	//return to thread mode
 	ldr	pc, =0xfffffffd
 

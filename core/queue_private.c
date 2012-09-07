@@ -42,7 +42,7 @@ static inline QUEUE* svc_queue_create(unsigned int block_size, unsigned int bloc
 	unsigned int align_offset = sizeof(DLIST);
 	if (align > align_offset)
 		align_offset = align;
-	void* mem_block = malloc_aligned(blocks_count * (block_size + align_offset), align);
+	void* mem_block = malloc_aligned(blocks_count * (block_size + align_offset), align_offset);
 	if (mem_block)
 	{
 		queue = sys_alloc(sizeof(QUEUE));
@@ -57,7 +57,7 @@ static inline QUEUE* svc_queue_create(unsigned int block_size, unsigned int bloc
 			queue->free_blocks = NULL;
 			queue->filled_blocks = NULL;
 			for (i = 0; i < blocks_count; ++i)
-				dlist_add_tail(&queue->free_blocks, (DLIST*)((unsigned int)mem_block + i * (block_size + sizeof(DLIST))));
+				dlist_add_tail(&queue->free_blocks, (DLIST*)((unsigned int)mem_block + i * (block_size + align_offset)));
 		}
 		else
 		{

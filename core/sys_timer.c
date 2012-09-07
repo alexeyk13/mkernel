@@ -30,6 +30,8 @@
 #include "dbg.h"
 #include "irq.h"
 #include "string.h"
+#include "sys_calls.h"
+#include "sys_call.h"
 #if (SYS_TIMER_SOFT_RTC == 0)
 #include "rtc.h"
 #endif //SYS_TIMER_SOFT_RTC
@@ -191,6 +193,7 @@ void svc_sys_timer_create(TIMER* timer)
 		find_shoot_next();
 }
 
+extern int qqq;
 void svc_sys_timer_destroy(TIMER* timer)
 {
 	CHECK_CONTEXT(SUPERVISOR_CONTEXT | IRQ_CONTEXT);
@@ -253,4 +256,34 @@ TIME* svc_get_uptime(TIME* uptime)
 		uptime->usec -= TIMER_ONE_SECOND;
 	}
 	return uptime;
+}
+
+void sys_timer_create(TIMER* timer)
+{
+	CHECK_CONTEXT(SYSTEM_CONTEXT | SUPERVISOR_CONTEXT | IRQ_CONTEXT);
+	sys_call(SYS_TIMER_CREATE, (unsigned int)timer, 0, 0);
+}
+
+void sys_timer_destroy(TIMER* timer)
+{
+	CHECK_CONTEXT(SYSTEM_CONTEXT | SUPERVISOR_CONTEXT | IRQ_CONTEXT);
+	sys_call(SYS_TIMER_DESTROY, (unsigned int)timer, 0, 0);
+}
+
+unsigned int svc_sys_timer_handler(unsigned int num, unsigned int param1)
+{
+	CHECK_CONTEXT(SUPERVISOR_CONTEXT | IRQ_CONTEXT);
+	unsigned int res = 0;
+	switch (num)
+	{
+	case SYS_TIMER_CREATE:
+		svc_sys_timer_create((TIMER*)param1);
+		break;
+	case SYS_TIMER_DESTROY:
+		svc_sys_timer_destroy((TIMER*)param1);
+		break;
+	default:
+		error_value(ERROR_GENERAL_INVALID_SYS_CALL, num);
+	}
+	return res;
 }

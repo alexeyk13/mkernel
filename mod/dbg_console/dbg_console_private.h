@@ -28,6 +28,7 @@
 #define DBG_CONSOLE_PRIVATE_H
 
 void dbg_console_create();
+void dbg_console_destroy();
 
 unsigned int svc_dbg_handler(unsigned int num, unsigned int param1, unsigned int param2);
 

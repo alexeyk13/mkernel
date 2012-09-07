@@ -72,6 +72,9 @@ unsigned int sys_handler(unsigned int num, unsigned int param1, unsigned int par
 	case SYS_CALL_QUEUE:
 		res = (unsigned int)svc_queue_handler(num, param1, param2, param3);
 		break;
+	case SYS_CALL_SYS_TIMER:
+		res = (unsigned int)svc_sys_timer_handler(num, param1);
+		break;
 	case SYS_CALL_TIME:
 		res = (unsigned int)svc_sys_time_handler(num, param1);
 		break;

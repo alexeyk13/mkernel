@@ -32,6 +32,7 @@
 #include "error.h"
 #include "magic.h"
 #include "dbg.h"
+#include "sys_call.h"
 
 #define CFSR_IACCVIOL							(1 << 0)
 #define CFSR_DACCVIOL							(1 << 1)
@@ -50,6 +51,9 @@
 #define CFSR_NOCP									(1 << 19)
 #define CFSR_UNALIGNED							(1 << 24)
 #define CFSR_DIVBYZERO							(1 << 25)
+
+#define PSP_IN_LR									0xfffffffd
+#define SVC_12										0xdf12
 
 CONTEXT get_context()
 {
@@ -101,55 +105,100 @@ void svc_stack_stat()
 }
 #endif //KERNEL_PROFILING
 
-void HardFault_Handler(void)
+void on_hard_fault(unsigned int ret_value, unsigned int* stack_value)
 {
-	if (SCB->HFSR & SCB_HFSR_VECTTBL_Msk)
-		fatal_error(ERROR_GENERAL_VECTOR_TABLE_READ_FAULT, NULL);
-	fatal_error(ERROR_GENERAL_HARD_FAULT, NULL);
+	unsigned int caller_address = stack_value[6];
+	//from thread context, just killing thread
+	if (ret_value == PSP_IN_LR)
+	{
+		if (SCB->HFSR & SCB_HFSR_VECTTBL_Msk)
+			error_address(ERROR_GENERAL_VECTOR_TABLE_READ_FAULT, caller_address);
+		//wrong sys call
+		else if (*(uint16_t*)(caller_address - 2) == SVC_12)
+		{
+			__enable_irq();
+			error_address(ERROR_GENERAL_SYS_CALL_ON_DISABLED_INTERRUPTS, stack_value[5] & 0xfffffffe);
+		}
+		else
+			error_address(ERROR_GENERAL_HARD_FAULT, caller_address);
+	}
+	else
+	{
+		if (SCB->HFSR & SCB_HFSR_VECTTBL_Msk)
+			fatal_error_address(ERROR_GENERAL_VECTOR_TABLE_READ_FAULT, caller_address);
+		//wrong sys call
+		else if (*(uint16_t*)(caller_address - 2) == SVC_12)
+		{
+			__enable_irq();
+			fatal_error_address(ERROR_GENERAL_SYS_CALL_ON_DISABLED_INTERRUPTS, stack_value[5] & 0xfffffffe);
+		}
+		else
+			fatal_error_address(ERROR_GENERAL_HARD_FAULT, caller_address);
+	}
 }
 
-void MemManage_Handler(void)
+void on_mem_manage(unsigned int ret_value, unsigned int* stack_value)
 {
-	if (SCB->CFSR & CFSR_DACCVIOL)
+	unsigned int caller_address = stack_value[6];
+	if (SCB->CFSR & CFSR_MSTKERR)
+		fatal_error_address(ERROR_GENERAL_STACKING_FAILED, caller_address);
+	else if (SCB->CFSR & CFSR_MUNSTKERR)
+		fatal_error_address(ERROR_GENERAL_UNSTACKING_FAILED, caller_address);
+	else if (SCB->CFSR & CFSR_DACCVIOL)
 		error_address(ERROR_MEM_DATA_ACCESS_VIOLATION, SCB->MMFAR);
 	else if (SCB->CFSR & CFSR_IACCVIOL)
 		error_address(ERROR_MEM_INSTRUCTION_ACCESS_VIOLATION, SCB->MMFAR);
-	else if (SCB->CFSR & CFSR_MSTKERR)
-		fatal_error(ERROR_GENERAL_STACKING_FAILED, NULL);
-	else if (SCB->CFSR & CFSR_MUNSTKERR)
-		fatal_error(ERROR_GENERAL_UNSTACKING_FAILED, NULL);
 	else
-		fatal_error(ERROR_GENERAL_HARD_FAULT, NULL);
+		on_hard_fault(ret_value, stack_value);
 }
 
-void BusFault_Handler(void)
+void on_bus_fault(unsigned int ret_value, unsigned int* stack_value)
 {
+	unsigned int caller_address = stack_value[6];
 	if (SCB->CFSR & CFSR_BSTKERR)
-		fatal_error(ERROR_GENERAL_STACKING_FAILED, NULL);
-	if (SCB->CFSR & CFSR_BUNSTKERR)
-		fatal_error(ERROR_GENERAL_UNSTACKING_FAILED, NULL);
-	unsigned int address = SCB->BFAR;
-	if (SCB->CFSR & (CFSR_IMPRECISERR | CFSR_PRECISERR))
-		fatal_error_address(ERROR_GENERAL_DATA_BUS_ERROR, address);
-	if (SCB->CFSR & CFSR_IBUSERR)
-		fatal_error_address(ERROR_GENERAL_INSTRUCTION_BUS_ERROR, address);
-	fatal_error(ERROR_GENERAL_HARD_FAULT, NULL);
+		fatal_error_address(ERROR_GENERAL_STACKING_FAILED, caller_address);
+	else if (SCB->CFSR & CFSR_BUNSTKERR)
+		fatal_error_address(ERROR_GENERAL_UNSTACKING_FAILED, caller_address);
+	else if (SCB->CFSR & (CFSR_IMPRECISERR | CFSR_PRECISERR))
+		fatal_error_address(ERROR_GENERAL_DATA_BUS_ERROR, SCB->BFAR);
+	else if (SCB->CFSR & CFSR_IBUSERR)
+		fatal_error_address(ERROR_GENERAL_INSTRUCTION_BUS_ERROR, SCB->BFAR);
+	else
+		on_hard_fault(ret_value, stack_value);
 }
 
-void UsageFault_Handler(void)
+void on_usage_fault(unsigned int ret_value, unsigned int* stack_value)
 {
-	if (SCB->CFSR & CFSR_DIVBYZERO)
-		error_thread(ERROR_GENERAL_DIVISION_BY_ZERO);
-	else if (SCB->CFSR & CFSR_UNALIGNED)
-		fatal_error(ERROR_GENERAL_UNALIGNED_ACCESS, NULL);
-	else if (SCB->CFSR & CFSR_NOCP)
-		error_thread(ERROR_GENERAL_NO_COPROCESSOR);
-	else if (SCB->CFSR & (CFSR_UNDEFINSTR | CFSR_INVPC))
-		error_thread(ERROR_GENERAL_UNDEFINED_INSTRUCTION);
-	else if (SCB->CFSR & CFSR_INVSTATE)
-		error_thread(ERROR_GENERAL_INVALID_STATE);
-	//clear bits and continue
-	SCB->CFSR = SCB->CFSR;
+	unsigned int caller_address = stack_value[6];
+	//from thread context, just killing thread
+	if (ret_value == PSP_IN_LR)
+	{
+		if (SCB->CFSR & CFSR_DIVBYZERO)
+			error_address(ERROR_GENERAL_DIVISION_BY_ZERO, caller_address);
+		else if (SCB->CFSR & CFSR_UNALIGNED)
+			error_address(ERROR_GENERAL_UNALIGNED_ACCESS, caller_address);
+		else if (SCB->CFSR & CFSR_NOCP)
+			error_address(ERROR_GENERAL_NO_COPROCESSOR, caller_address);
+		else if (SCB->CFSR & (CFSR_UNDEFINSTR | CFSR_INVPC))
+			error_address(ERROR_GENERAL_UNDEFINED_INSTRUCTION, caller_address);
+		else if (SCB->CFSR & CFSR_INVSTATE)
+			error_address(ERROR_GENERAL_INVALID_STATE, caller_address);
+		//clear bits and continue
+		SCB->CFSR = SCB->CFSR;
+	}
+	else
+	{
+		if (SCB->CFSR & CFSR_DIVBYZERO)
+			fatal_error_address(ERROR_GENERAL_DIVISION_BY_ZERO, caller_address);
+		else if (SCB->CFSR & CFSR_UNALIGNED)
+			fatal_error_address(ERROR_GENERAL_UNALIGNED_ACCESS, caller_address);
+		else if (SCB->CFSR & CFSR_NOCP)
+			fatal_error_address(ERROR_GENERAL_NO_COPROCESSOR, caller_address);
+		else if (SCB->CFSR & (CFSR_UNDEFINSTR | CFSR_INVPC))
+			fatal_error_address(ERROR_GENERAL_UNDEFINED_INSTRUCTION, caller_address);
+		else if (SCB->CFSR & CFSR_INVSTATE)
+			fatal_error_address(ERROR_GENERAL_INVALID_STATE, caller_address);
+	}
 }
 
 void default_irq_handler(void)

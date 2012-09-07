@@ -66,7 +66,7 @@ typedef struct {
 unsigned int svc_thread_handler(unsigned int num, unsigned int param1, unsigned int param2);
 void thread_init();
 
-const char* svc_thread_name(THREAD* thread);
+const char* svc_thread_name(THREAD *thread);
 //for sync-object internal calls (usually mutexes)
 void svc_thread_set_current_priority(THREAD* thread, unsigned int priority);
 void svc_thread_restore_current_priority(THREAD* thread);
@@ -76,6 +76,7 @@ void svc_thread_restore_current_priority(THREAD* thread);
 void svc_thread_sleep(TIME* time, THREAD_SYNC_TYPE sync_type, void* sync_object);
 void svc_thread_wakeup(THREAD* thread);
 THREAD* svc_thread_get_current();
+void svc_thread_destroy_current();
 
 
 //user idle_task

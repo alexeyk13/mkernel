@@ -227,6 +227,12 @@ void gpio_enable_afio(GPIO_CLASS pin, AFIO_MODE mode, AFIO_PUSH_MODE push_mode)
 	}
 }
 
+void gpio_enable_analog(GPIO_CLASS pin)
+{
+	gpio_enable_pin_power(pin);
+	GPIO[PORT(pin)]->MODER |= (3 << (PIN(pin) * 2));
+}
+
 void gpio_set_pin(GPIO_CLASS pin, bool set)
 {
 	if (set)

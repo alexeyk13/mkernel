@@ -221,7 +221,7 @@ void mem_pool_free(MEM_POOL* pool, void* ptr)
 		entry_end -= WORD_SIZE;
 		align_bottom += WORD_SIZE;
 	}
-	if (align_top == 0 || align_bottom == 0 || align_bottom != align_top)
+	if (align_top == 0 || align_bottom == 0 || align_bottom < align_top)
 		error_address(ERROR_MEM_POOL_RANGE_CHECK_FAILED, (unsigned int)ptr);
 #endif //KERNEL_RANGE_CHECKING
 	//find in free list entry before current

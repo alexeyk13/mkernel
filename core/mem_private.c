@@ -93,13 +93,13 @@ void sys_free(void *ptr)
 
 void* stack_alloc(int size)
 {
-	CHECK_CONTEXT(SUPERVISOR_CONTEXT);
+	CHECK_CONTEXT(IRQ_CONTEXT | SUPERVISOR_CONTEXT);
 	return mem_pool_alloc(&_stack_pool, size, THREAD_STACK_ALIGN);
 }
 
 void stack_free(void* ptr)
 {
-	CHECK_CONTEXT(SUPERVISOR_CONTEXT);
+	CHECK_CONTEXT(IRQ_CONTEXT | SUPERVISOR_CONTEXT);
 	mem_pool_free(&_stack_pool, ptr);
 }
 

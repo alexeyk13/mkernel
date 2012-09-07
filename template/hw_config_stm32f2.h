@@ -146,6 +146,10 @@
 #else
 #define USB_DATA_ALIGN								4
 #endif
+
+//due to bug in STM, core reset may halt system if USB is not plugged
+//usually core reset only needed on dynamic core changing
+#define USB_STM_RESET_CORE							0
 //--------------------- SDIO hw config ---------------------------------------
 #define SDIO_DMA_ENABLED
 #define SDIO_DMA_STREAM								DMA_STREAM_3

@@ -24,31 +24,21 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef SYS_TIMER_H
-#define SYS_TIMER_H
+#ifndef SW_TIMER_H
+#define SW_TIMER_H
 
+#include "types.h"
 #include "time.h"
-#include "dlist.h"
-#include "sys_time.h"
 
-typedef void (*SYS_TIMER_HANDLER)(void*);
+typedef void (*SW_TIMER_HANDLER)(void*);
 
-typedef struct {
-	DLIST list;
-	TIME time;
-	SYS_TIMER_HANDLER callback;
-	void* param;
-}TIMER;
+HANDLE sw_timer_create(SW_TIMER_HANDLER handler, void* param);
+void sw_timer_destroy(HANDLE handle);
+void sw_timer_start(HANDLE handle, TIME* timeout);
+void sw_timer_start_ms(HANDLE handle, unsigned int timeout_ms);
+void sw_timer_start_us(HANDLE handle, unsigned int timeout_us);
+void sw_timer_stop(HANDLE handle);
 
-void sys_timer_init();
+void sw_timer_init();
 
-//can be called from SVC/IRQ
-void svc_sys_timer_create(TIMER* timer);
-void svc_sys_timer_destroy(TIMER* timer);
-TIME* svc_get_uptime(TIME* uptime);
-unsigned int svc_sys_timer_handler(unsigned int num, unsigned int param1);
-//can be called from SVC/IRQ/SYS
-void sys_timer_create(TIMER* timer);
-void sys_timer_destroy(TIMER* timer);
-
-#endif // SYS_TIMER_H
+#endif // SW_TIMER_H

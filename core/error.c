@@ -48,7 +48,8 @@ const char* const GENERAL_ERRORS[] =				{"Abstract general error",
 																 "Division by zero",
 																 "Unaligned access",
 																 "No coprocessor found",
-																 "Invalid state"};
+																 "Invalid state",
+																 "SYS call, while interrupts are disabled"};
 const char* const MEM_ERRORS[] =						{"Abstract memory error",
 																 "Pointer outside of memory pool",
 																 "Range check failed",
@@ -83,28 +84,38 @@ void fatal_error(ERROR_CODE ec, const char* name)
 {
 #ifdef KERNEL_DEBUG
 	if (name)
-		printf("%s: %s\n\r", name, ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE]);
+		printf("FATAL: %s: %s\n\r", name, ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE]);
 	else
-		printf("%s\n\r", ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE]);
+		printf("FATAL: %s\n\r", ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE]);
 #else //KERNEL_DEBUG
 	if (name)
-		printf("%s: fatal error 0x%x\n\r", name, ec);
+		printf("FATAL: %s: fatal error 0x%x\n\r", name, ec);
 	else
-		printf("fatal error 0x%x\n\r", ec);
+		printf("FATAL: error 0x%x\n\r", ec);
 #endif //KERNEL_DEBUG
 	dump(SYSTEM_POOL_BASE, 0x100);
+	dbg_push();
+#if (KERNEL_HALT_ON_FATAL_ERROR)
+	HALT();
+#else
 	reset();
+#endif //KERNEL_HALT_ON_FATAL_ERROR
 }
 
 void fatal_error_address(ERROR_CODE ec, unsigned int address)
 {
 #ifdef KERNEL_DEBUG
-	printf("%s at 0x%08x\n\r", ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE], address);
+	printf("FATAL: %s at 0x%08x\n\r", ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE], address);
 #else //KERNEL_DEBUG
-	printf("fatal error 0x%x at 0x%08x\n\r", ec, address);
+	printf("FATAL: error 0x%x at 0x%08x\n\r", ec, address);
 #endif //KERNEL_DEBUG
 	dump(SYSTEM_POOL_BASE, 0x100);
+	dbg_push();
+#if (KERNEL_HALT_ON_FATAL_ERROR)
+	HALT();
+#else
 	reset();
+#endif //KERNEL_HALT_ON_FATAL_ERROR
 }
 
 void dump(unsigned int addr, unsigned int size)
@@ -119,6 +130,8 @@ void dump(unsigned int addr, unsigned int size)
 		if ((i % 0x10) == 0xf)
 			printf("\n\r");
 	}
+	if (size % 0x10)
+		printf("\n\r");
 }
 
 void error(ERROR_CODE ec, const char* name)
@@ -134,7 +147,9 @@ void error(ERROR_CODE ec, const char* name)
 	else
 		printf("error 0x%x\n\r", ec);
 #endif //KERNEL_DEBUG
-	if (get_context() != IRQ_CONTEXT)
+	if (get_context() & (IRQ_CONTEXT | SUPERVISOR_CONTEXT))
+		svc_thread_destroy_current();
+	else
 		thread_exit();
 }
 
@@ -143,31 +158,38 @@ void error_thread(ERROR_CODE ec)
 #ifdef KERNEL_DEBUG
 	printf("%s: %s\n\r", svc_thread_name(svc_thread_get_current()), ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE]);
 #else //KERNEL_DEBUG
-	printf("%s: error 0x%x\n\r", svc_thread_name(svc_thread_get_current()), ec);
+	printf("%s: error %#x\n\r", svc_thread_name(svc_thread_get_current()), ec);
 #endif //KERNEL_DEBUG
-	if (get_context() != IRQ_CONTEXT)
+	if (get_context() & (IRQ_CONTEXT | SUPERVISOR_CONTEXT))
+		svc_thread_destroy_current();
+	else
 		thread_exit();
 }
 
 void error_address(ERROR_CODE ec, unsigned int address)
 {
 #ifdef KERNEL_DEBUG
-	printf("%s at 0x%08x\n\r", ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE], address);
+	printf("%s: %s at %#.08x\n\r", svc_thread_name(svc_thread_get_current()), ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE], address);
 #else //KERNEL_DEBUG
-	printf("error 0x%x at 0x%08x\n\r", ec, address);
+	printf("%s: error %#x at %#.08x\n\r", svc_thread_name(svc_thread_get_current()), ec, address);
 #endif //KERNEL_DEBUG
-	if (get_context() != IRQ_CONTEXT)
+	if (get_context() & (IRQ_CONTEXT | SUPERVISOR_CONTEXT))
+		svc_thread_destroy_current();
+	else
 		thread_exit();
 }
 
 void error_value(ERROR_CODE ec, unsigned int value)
 {
 #ifdef KERNEL_DEBUG
-	printf("%s %d\n\r", ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE], value);
+	printf("%s: %s %d\n\r", svc_thread_name(svc_thread_get_current()), ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE], value);
 #else //KERNEL_DEBUG
-	printf("error 0x%x: %d\n\r", ec, value);
+	printf("%s: error %#x %d\n\r", svc_thread_name(svc_thread_get_current()), ec, value);
 #endif //KERNEL_DEBUG
-	thread_exit();
+	if (get_context() & (IRQ_CONTEXT | SUPERVISOR_CONTEXT))
+		svc_thread_destroy_current();
+	else
+		thread_exit();
 }
 
 void error_dev(ERROR_CODE ec, DEVICE_CLASS dev, int idx)
@@ -175,8 +197,10 @@ void error_dev(ERROR_CODE ec, DEVICE_CLASS dev, int idx)
 #ifdef KERNEL_DEBUG
 	printf("%s_%d: %s_\n\r", DEV_NAMES[dev], idx, ERRORS[ec / ERROR_GROUP_SIZE][ec % ERROR_GROUP_SIZE]);
 #else //KERNEL_DEBUG
-	printf("device %d,%d error 0x%x\n\r", dev, idx, ec);
+	printf("device %d,%d error %#x\n\r", dev, idx, ec);
 #endif //KERNEL_DEBUG
-	if (get_context() != IRQ_CONTEXT)
+	if (get_context() & (IRQ_CONTEXT | SUPERVISOR_CONTEXT))
+		svc_thread_destroy_current();
+	else
 		thread_exit();
 }

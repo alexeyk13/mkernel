@@ -39,6 +39,7 @@
 #include "error.h"
 
 CONSOLE* _dbg_console										= NULL;
+HANDLE _dbg_console_thread;
 
 void dbg_console_thread(void* param)
 {
@@ -80,7 +81,13 @@ void dbg_console_create()
 	baud.baud = DBG_CONSOLE_BAUD;
 	uart_set_baudrate(DBG_CONSOLE_UART, &baud);
 
-	thread_create_and_run("DBG console", DBG_CONSOLE_THREAD_STACK_SIZE, DBG_CONSOLE_THREAD_PRIORITY, dbg_console_thread, NULL);
+	_dbg_console_thread = thread_create_and_run("DBG console", DBG_CONSOLE_THREAD_STACK_SIZE, DBG_CONSOLE_THREAD_PRIORITY, dbg_console_thread, NULL);
+}
+
+void dbg_console_destroy()
+{
+	thread_destroy(_dbg_console_thread);
+	console_destroy(_dbg_console);
 }
 
 unsigned int svc_dbg_handler(unsigned int num, unsigned int param1, unsigned int param2)

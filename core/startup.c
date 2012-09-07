@@ -34,13 +34,16 @@
 #include "rcc.h"
 #include "thread_private.h"
 #include "kernel_config.h"
-#ifdef DBG_CONSOLE
+#if (DBG_CONSOLE)
 #include "dbg_console_private.h"
 #endif //DBG_CONSOLE
 #ifndef  NVIC_PRESENT
 #include "irq.h"
 #endif //NVIC_PRESENT
 #include "rand.h"
+#if (SW_TIMER_MODULE)
+#include "sw_timer.h"
+#endif //SW_TIMER_MODULE
 
 extern void application_init();
 
@@ -59,7 +62,9 @@ void startup()
 #if (DBG_CONSOLE)
 	dbg_console_create();
 #endif
-
+#if (SW_TIMER_MODULE)
+	sw_timer_init();
+#endif
 	//initialize RTC
 	sys_time_init();
 	//initialize system timers

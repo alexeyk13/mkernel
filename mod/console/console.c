@@ -30,6 +30,7 @@
 #include "irq.h"
 #include "dbg.h"
 #include "string.h"
+#include "delay.h"
 
 #define CONSOLE_FLAG_BUSY										(1 << 0)
 #define CONSOLE_FLAG_LN											(1 << 1)
@@ -98,6 +99,9 @@ CONSOLE* console_create(UART_CLASS port, int tx_size, int priority)
 
 void console_destroy(CONSOLE* console)
 {
+	console_push(console);
+	//make sure last char is written
+	delay_ms(1);
 	uart_disable(console->h.port);
 	event_destroy(console->h.rx_event);
 	sys_free(console);

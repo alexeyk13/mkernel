@@ -28,6 +28,8 @@
 #include "timer.h"
 #include "sys_call.h"
 #include "sys_calls.h"
+#include "irq.h"
+#include "dbg.h"
 
 time_t get_sys_time()
 {

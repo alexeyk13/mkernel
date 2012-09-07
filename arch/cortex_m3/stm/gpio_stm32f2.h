@@ -68,6 +68,7 @@ extern const GPIO_TypeDef_P GPIO[];
 
 //stm32f2 specific, for internal use of drivers
 void gpio_enable_afio(GPIO_CLASS pin, AFIO_MODE mode, AFIO_PUSH_MODE push_mode);
+void gpio_enable_analog(GPIO_CLASS pin);
 void gpio_disable_jtag();
 
 #endif // GPIO_STM32F2_H
