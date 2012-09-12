@@ -1,11 +1,12 @@
-About
------
+About										{#about}
+=====
 
 MKernel is embedded RTOS, based on microkernel architecture.
 It's designed for ARM microprocessors, however, can be easily ported to any
 32bit MCU.
 
-Features:
+Features									 
+========
 
 - BSD License, royalty free, open source.
 - Tickless. For system scheduling used 1 HPET timer and RTC. If RTC is
@@ -39,15 +40,17 @@ functionality)
   * cortex-m3, drivers for:STM32 F2 (gpio, uart, rcc, timer, dma, rand)
 
 Cortex-M3 features:
+------------------
 - Native SVC and pendSV support
 
 ARM7 features:
+-------------
 - Nested interrupts
 - FIQ support
 - pendSV emulation, when returning to user/system context
 
 History
--------
+=======
 0.1.4
 + new module: software timers, running in independent thread
 + keyboard module new functions: keyboard_wait_for_key, keyboard_has_messages
@@ -74,12 +77,7 @@ History
 - added support for STM32 F2 HW RNG
 - srand() by default in startup
 
-Documentation
--------------
-
-In progress.... Will be ready ~09.2012
-
 Contacts
---------
+========
 
 Author: Alexey Kramarenko, alexeyk13@yandex.ru

@@ -45,7 +45,25 @@
 #include "sw_timer.h"
 #endif //SW_TIMER_MODULE
 
+/** \addtogroup user_provided user provided functions
+	\{
+ */
+
+/** \brief application init
+	\details called by core after system is initialized, but before system is started.
+	It is used by user for:
+	- variables initialization
+	- user drivers enabling
+	- initial task creation
+
+	Remember, on application_init interrupts are still disabled
+	\retval none
+	*/
 extern void application_init();
+
+/**
+	\}
+ */
 
 void startup()
 {

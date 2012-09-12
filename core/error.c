@@ -80,6 +80,40 @@ const char* const DEV_NAMES[] =						{"SYS", "FLASH", "TIMER", "UART", "SPI", "G
 
 #endif //KERNEL_DEBUG
 
+/** \addtogroup error error handling
+	M-Kernel has embedded error management
+
+	Generally, error handling is divided on 2 types:
+		- non-fatal error handling
+		- fatal error handling
+
+	non-fatal is for USER/SYSTEM context, fatal: for IRQ/SVC context
+
+	on non fatal error handler:
+		- displays error message with current thread name
+		- kill current running thread
+
+	on fatal error:
+		- display error message with FATAL prefix
+		- made minidump of system memory pool
+		- push debug info over console
+		- if \ref KERNEL_HALT_ON_FATAL_ERROR is set, system will halt, otherwise,
+		reset sequence is initiated
+
+	in case of \ref KERNEL_DEBUG is set full error text is displayed, otherwise
+	debug info is stripped and only error code is displayed. Anyway, error handling is
+	working in both debug and release cases.
+
+	list of actual error codes can be found in error.h
+	\{
+ */
+
+/**
+	\brief fatal error with custom text
+	\param ec: error code
+	\param name: custom text to display
+	\retval no return
+*/
 void fatal_error(ERROR_CODE ec, const char* name)
 {
 #ifdef KERNEL_DEBUG
@@ -102,6 +136,12 @@ void fatal_error(ERROR_CODE ec, const char* name)
 #endif //KERNEL_HALT_ON_FATAL_ERROR
 }
 
+/**
+	\brief fatal error on specific address
+	\param ec: error code
+	\param address: custom address to display
+	\retval no return
+*/
 void fatal_error_address(ERROR_CODE ec, unsigned int address)
 {
 #ifdef KERNEL_DEBUG
@@ -118,6 +158,18 @@ void fatal_error_address(ERROR_CODE ec, unsigned int address)
 #endif //KERNEL_HALT_ON_FATAL_ERROR
 }
 
+/** \} */ // end of error group
+
+/** \addtogroup debug debug routines
+	\{
+ */
+
+/**
+	\brief minidump
+	\param addr: starting address
+	\param size: size in bytes
+	\retval none
+*/
 void dump(unsigned int addr, unsigned int size)
 {
 	printf("memory dump 0x%08x-0x%08x\n\r", addr, addr + size);
@@ -134,6 +186,18 @@ void dump(unsigned int addr, unsigned int size)
 		printf("\n\r");
 }
 
+/** \} */ // end of debug group
+
+/** \addtogroup error error handling
+	\{
+ */
+
+/**
+	\brief error with custom text
+	\param ec: error code
+	\param name: custom text to display
+	\retval none
+*/
 void error(ERROR_CODE ec, const char* name)
 {
 #ifdef KERNEL_DEBUG
@@ -153,6 +217,11 @@ void error(ERROR_CODE ec, const char* name)
 		thread_exit();
 }
 
+/**
+	\brief thread error
+	\param ec: error code
+	\retval none
+*/
 void error_thread(ERROR_CODE ec)
 {
 #ifdef KERNEL_DEBUG
@@ -166,6 +235,12 @@ void error_thread(ERROR_CODE ec)
 		thread_exit();
 }
 
+/**
+	\brief thread error on custom address
+	\param ec: error code
+	\param address: custom address
+	\retval none
+*/
 void error_address(ERROR_CODE ec, unsigned int address)
 {
 #ifdef KERNEL_DEBUG
@@ -179,6 +254,12 @@ void error_address(ERROR_CODE ec, unsigned int address)
 		thread_exit();
 }
 
+/**
+	\brief thread error with custom error value
+	\param ec: error code
+	\param value: custom error value
+	\retval none
+*/
 void error_value(ERROR_CODE ec, unsigned int value)
 {
 #ifdef KERNEL_DEBUG
@@ -192,6 +273,13 @@ void error_value(ERROR_CODE ec, unsigned int value)
 		thread_exit();
 }
 
+/**
+	\brief device error
+	\param ec: error code
+	\param dev: device class. Name is only printed when \ref KERNEL_DEBUG is set
+	\param idx: device index
+	\retval none
+*/
 void error_dev(ERROR_CODE ec, DEVICE_CLASS dev, int idx)
 {
 #ifdef KERNEL_DEBUG
@@ -204,3 +292,5 @@ void error_dev(ERROR_CODE ec, DEVICE_CLASS dev, int idx)
 	else
 		thread_exit();
 }
+
+/** \} */ // end of error group

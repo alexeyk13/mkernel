@@ -63,6 +63,17 @@ void mem_init()
 	mem_pool_init(&_data_pool);
 }
 
+/** \addtogroup memory dynamic memory management
+	\{
+ */
+
+/**
+	\brief allocate memory in system pool with specific align
+	\details cannot be called from USER context
+	\param size: data size in bytes
+	\param align: align in bytes
+	\retval pointer on success, NULL on out of memory conditiion
+*/
 void* sys_alloc_aligned(int size, int align)
 {
 	CHECK_CONTEXT(IRQ_CONTEXT | SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
@@ -73,6 +84,12 @@ void* sys_alloc_aligned(int size, int align)
 	return ptr;
 }
 
+/**
+	\brief allocate memory in system pool
+	\details cannot be called from USER context
+	\param size: data size in bytes
+	\retval pointer on success, NULL on out of memory conditiion
+*/
 void* sys_alloc(int size)
 {
 	CHECK_CONTEXT(IRQ_CONTEXT | SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
@@ -83,6 +100,12 @@ void* sys_alloc(int size)
 	return ptr;
 }
 
+/**
+	\brief free memory in system pool
+	\details cannot be called from USER context
+	\param ptr: pointer to allocated data
+	\retval none
+*/
 void sys_free(void *ptr)
 {
 	CHECK_CONTEXT(IRQ_CONTEXT | SUPERVISOR_CONTEXT | SYSTEM_CONTEXT);
@@ -90,6 +113,8 @@ void sys_free(void *ptr)
 	mem_pool_free(&_sys_pool, ptr);
 	CRITICAL_LEAVE;
 }
+
+/** \} */ // end of event group
 
 void* stack_alloc(int size)
 {

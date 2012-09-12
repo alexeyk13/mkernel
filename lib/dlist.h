@@ -27,6 +27,22 @@
 #ifndef DLIST_H
 #define DLIST_H
 
+/** \addtogroup lib_dlist dual-linked list
+	dual-linked list routines
+
+	dual-linked list is used mainly for system objects,
+	however, can be used for user lists.
+
+	\ref DLIST is just a header, added to custom structure
+	as a first element. Using cast it's possible to use
+	any structure as dual-linked lists of custom objects.
+
+	For memory-critical apllications it's possible to use
+	dual-linked lists also as a containers for up to 2 bit flags
+	(for 32 bit system)
+	\{
+ */
+
 /*
 	circular dual-linked list
  */
@@ -39,7 +55,16 @@
 	aligned dlist usage is a trick to add some flags to list
 */
 
+/**
+	\brief unalign \ref DLIST
+	\details if \ref DLIST is used as bit-field container, you must call
+	this function before any DLIST routines
+	\param ptr: DLIST pointer
+	\retval: unaligned DLIST
+  */
 #define UNALIGN_DLIST(ptr)					((DLIST*)(((unsigned int)(ptr)) & ~(WORD_SIZE - 1)))
+
+/** \} */ // end of lib_dlist group
 
 typedef struct _DLIST
 {
@@ -53,6 +78,7 @@ typedef struct
 	DLIST* cur;
 	bool has_more;
 } DLIST_ENUM;
+
 
 void dlist_clear(DLIST** dlist);
 bool is_dlist_empty(DLIST** dlist);

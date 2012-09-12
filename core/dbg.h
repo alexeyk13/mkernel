@@ -27,6 +27,11 @@
 #ifndef DBG_H
 #define DBG_H
 
+/** \addtogroup debug debug routines
+	\{
+	debug routines
+ */
+
 /*
 		dbg.h: debug-specific
   */
@@ -43,7 +48,21 @@
 #if (KERNEL_DEBUG)
 #include "error.h"
 
+
+/**
+	\brief halts system macro
+	\details only works, if \ref KERNEL_DEBUG is set
+	\retval no return
+*/
 #define HALT()											{dbg_push(); for (;;) {}}
+/**
+	\brief debug assertion
+	\details only works, if \ref KERNEL_DEBUG is set.
+
+	prints over debug console file name and line, caused assertion
+	\param cond: assertion made if \b cond is \b false
+	\retval no return if not \b cond, else none
+*/
 #define ASSERT(cond)									if (!(cond))	{printf("ASSERT at %s, line %d\n\r", __FILE__, __LINE__);	HALT();}
 
 #else
@@ -54,14 +73,40 @@
 #endif
 
 #if (KERNEL_CHECK_CONTEXT)
+/**
+	\brief context assertion
+	\details only works, if \ref KERNEL_DEBUG and \ref KERNEL_CHECK_CONTEXT are set.
+
+	prints over debug console file name and line, caused assertion
+	\param value: \ref CONTEXT to check
+	\retval no return if wrong context, else none
+*/
 #define CHECK_CONTEXT(value)						if ((get_context() & (value)) == 0) {printf("WRONG CONTEXT at %s, line %d\n\r", __FILE__, __LINE__);	HALT();}
 #else
 #define CHECK_CONTEXT(value)
 #endif
 
 #if (KERNEL_MARKS)
+/**
+	\brief check, if object mark is right (object is valid)
+	\details only works, if \ref KERNEL_DEBUG and \ref KERNEL_MARKS are set.
+	\param obj: object to check
+	\param magic_value: value to set. check \ref magic.h for details
+	\param name: object text to display in case of wrong magic
+	\retval no return if wrong magic, else none
+*/
 #define CHECK_MAGIC(obj, magic_value, name)	if (obj->magic != magic_value) fatal_error(ERROR_GENERAL_INVALID_MAGIC, name)
+/**
+	\brief apply object magic on object creation
+	\details only works, if \ref KERNEL_DEBUG and \ref KERNEL_MARKS are set.
+	\param obj: object to check
+	\param magic_value: value to set. check \ref magic.h for details
+	\retval none
+*/
 #define DO_MAGIC(obj, magic_value)				obj->magic = magic_value
+/**
+	\brief this macro must be put in object structure
+*/
 #define MAGIC											unsigned int magic
 
 #else
@@ -70,6 +115,7 @@
 #define MAGIC
 #endif
 
+/** \} */ // end of debug group
 
 #if (CONSOLE_MODULE)
 

@@ -42,6 +42,23 @@ const unsigned short MDAY[2][12] =	{{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30
 const unsigned short YDAY[2][12] =	{{  0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334},
 												 {  0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}};
 
+#define USEC_1S							1000000ul
+#define USEC_1MS							1000ul
+#define MSEC_1S							1000ul
+
+#define MAX_US_DELTA						2146
+#define MAX_MS_DELTA						2147482
+
+/** \addtogroup lib_time time
+	time routines
+	\{
+ */
+
+/**
+	\brief POSIX analogue. Convert struct tm to time_t
+	\param ts: time in struct \ref tm
+	\retval time in \ref time_t
+*/
 time_t mktime(struct tm* ts)
 {
 	register time_t days_from_epoch;
@@ -54,6 +71,12 @@ time_t mktime(struct tm* ts)
 	return days_from_epoch * SECS_IN_DAY + (ts->tm_hour * 60 + ts->tm_min) * 60 + ts->tm_sec;
 }
 
+/**
+	\brief POSIX analogue. Convert time_t to struct tm
+	\param time: time in \ref time_t
+	\param ts: result time in struct \ref tm
+	\retval same as ts
+*/
 struct tm* gmtime(time_t time, struct tm* ts)
 {
 	register time_t val = time;
@@ -84,13 +107,14 @@ struct tm* gmtime(time_t time, struct tm* ts)
 	return ts;
 }
 
-#define USEC_1S							1000000ul
-#define USEC_1MS							1000ul
-#define MSEC_1S							1000ul
-
-#define MAX_US_DELTA						2146
-#define MAX_MS_DELTA						2147482
-
+/**
+	\brief compare time.
+	\param from: time from
+	\param to: time to
+	\retval if "to" > "from", return 1, \n
+	if "to" < "from", return -1, \n
+	if "to" == "from", return 0
+*/
 int time_compare(TIME* from, TIME* to)
 {
 	int res = -1;
@@ -107,6 +131,13 @@ int time_compare(TIME* from, TIME* to)
 	return res;
 }
 
+/**
+	\brief res = from + to
+	\param from: time from
+	\param to: time to
+	\param res: result time. Safe to be same as "from" or "to"
+	\retval none
+*/
 void time_add(TIME* from, TIME* to, TIME* res)
 {
 	res->sec = to->sec + from->sec;
@@ -119,6 +150,13 @@ void time_add(TIME* from, TIME* to, TIME* res)
 	}
 }
 
+/**
+	\brief res = to - from
+	\param from: time from
+	\param to: time to
+	\param res: result time. Safe to be same as "from" or "to"
+	\retval none
+*/
 void time_sub(TIME* from, TIME* to, TIME* res)
 {
 	if (time_compare(from, to) > 0)
@@ -137,24 +175,48 @@ void time_sub(TIME* from, TIME* to, TIME* res)
 		res->sec = res->usec = 0;
 }
 
+/**
+	\brief convert time in microseconds to \ref TIME structure
+	\param us: microseconds
+	\param time: pointer to allocated result \ref TIME structure
+	\retval none
+*/
 void us_to_time(int us, TIME* time)
 {
 	time->sec = us / USEC_1S;
 	time->usec = us % USEC_1S;
 }
 
+/**
+	\brief convert time in milliseconds to \ref TIME structure
+	\param ms: milliseconds
+	\param time: pointer to allocated result \ref TIME structure
+	\retval none
+*/
 void ms_to_time(int ms, TIME* time)
 {
 	time->sec = ms / MSEC_1S;
 	time->usec = (ms % MSEC_1S) * USEC_1MS;
 }
 
+/**
+	\brief convert time from \ref TIME structure to microseconds
+	\param time: pointer to \ref TIME structure. Maximal value: 0hr, 35 min, 46 seconds
+	\retval time in microseconds
+*/
 int time_to_us(TIME* time)
 {
 	return time->sec <= MAX_US_DELTA ? (int)(time->sec * USEC_1S + time->usec) : (int)(MAX_US_DELTA * USEC_1S);
 }
 
+/**
+	\brief convert time from \ref TIME structure to milliseconds
+	\param time: pointer to \ref TIME structure. Maximal value: 24days, 20hr, 31 min, 22 seconds
+	\retval time in milliseconds
+*/
 int time_to_ms(TIME* time)
 {
 	return time->sec <= MAX_MS_DELTA ? (int)(time->sec * MSEC_1S + time->usec / USEC_1MS) : (int)(MAX_MS_DELTA * MSEC_1S);
 }
+
+/** \} */ // end of lib_time group

@@ -24,40 +24,91 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/** \addtogroup event event
+	event is a sync object. It's used, when thread(s) are waiting
+	event from specific object.
+
+	event can be in 2 states: active and inactive. When event becomes
+	active, every event waiting functions returns immediatly. If event
+	is inactive, event waiting put thread in waiting state.
+
+	Because event_wait, event_wait_ms, event_wait_us can put current
+	thread in waiting state, this functions can be called only from
+	SYSTEM/USER context. Other functions, including event_set, event_pulse
+	can be called from any context
+	\{
+ */
+
 #include "event.h"
 #include "sys_call.h"
 #include "sys_calls.h"
 
+/**
+	\brief creates event object.
+	\retval event HANDLE on success. On failure (out of memory), error will be raised
+*/
 HANDLE event_create()
 {
 	return sys_call(EVENT_CREATE, 0, 0, 0);
 }
 
+/**
+	\brief make event active, release all waiters, go inactive state
+	\param event: event handle
+	\retval none
+*/
 void event_pulse(HANDLE event)
 {
 	sys_call(EVENT_PULSE, (unsigned int)event, 0, 0);
 }
 
+/**
+	\brief make event active, release all waiters, stay in active state
+	\param event: event handle
+	\retval none
+*/
 void event_set(HANDLE event)
 {
 	sys_call(EVENT_SET, (unsigned int)event, 0, 0);
 }
 
+/**
+	\brief check is event is active
+	\param event: event handle
+	\retval true if active, false if not
+*/
 bool event_is_set(HANDLE event)
 {
 	return sys_call(EVENT_IS_SET, (unsigned int)event, 0, 0);
 }
 
+/**
+	\brief make event inactive
+	\param event: event handle
+	\retval none
+*/
 void event_clear(HANDLE event)
 {
 	sys_call(EVENT_CLEAR, (unsigned int)event, 0, 0);
 }
 
+/**
+	\brief wait for event
+	\param event: event handle
+	\param timeout: pointer to TIME structure
+	\retval true on success, false on timeout
+*/
 bool event_wait(HANDLE event, TIME* timeout)
 {
 	return sys_call(EVENT_WAIT, (unsigned int)event, (unsigned int)timeout, 0);
 }
 
+/**
+	\brief wait for event
+	\param event: event handle
+	\param timeout_ms: timeout in milliseconds
+	\retval true on success, false on timeout
+*/
 bool event_wait_ms(HANDLE event, unsigned int timeout_ms)
 {
 	TIME timeout;
@@ -65,6 +116,12 @@ bool event_wait_ms(HANDLE event, unsigned int timeout_ms)
 	return sys_call(EVENT_WAIT, (unsigned int)event, (unsigned int)&timeout, 0);
 }
 
+/**
+	\brief wait for event
+	\param event: event handle
+	\param timeout_ms: timeout in microseconds
+	\retval true on success, false on timeout
+*/
 bool event_wait_us(HANDLE event, unsigned int timeout_us)
 {
 	TIME timeout;
@@ -72,7 +129,14 @@ bool event_wait_us(HANDLE event, unsigned int timeout_us)
 	return sys_call(EVENT_WAIT, (unsigned int)event, (unsigned int)&timeout, 0);
 }
 
+/**
+	\brief destroy event
+	\param event: event handle
+	\retval none
+*/
 void event_destroy(HANDLE event)
 {
 	sys_call(EVENT_DESTROY, (unsigned int)event, 0, 0);
 }
+
+/** \} */ // end of event group

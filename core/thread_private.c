@@ -471,13 +471,8 @@ void svc_thread_destroy_current()
 
 void svc_thread_sleep(TIME* time, THREAD_SYNC_TYPE sync_type, void *sync_object)
 {
-	THREAD* thread = _current_thread;
-	if (get_context() != SUPERVISOR_CONTEXT)
-	{
-		printf("context error for thread: %s, sync type: %d\n\r", THREAD_NAME(thread), sync_type);
-	}
 	CHECK_CONTEXT(SUPERVISOR_CONTEXT);
-////	THREAD* thread = _current_thread;
+	THREAD* thread = _current_thread;
 	CHECK_MAGIC(thread, MAGIC_THREAD, THREAD_NAME(thread));
 	//idle thread cannot sleep or be locked by mutex
 	if (thread == _idle_thread)

@@ -24,25 +24,60 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/** \addtogroup semaphore semaphore
+	semaphore is a sync object. It's used, for signalling sync condition
+
+	Semaphore is quite simple. semaphore_signal increments counter, any
+	semaphore_wait*, decrements. If counter reached zero, thread will be putted
+	in waiting state until next semaphore_signal.
+
+	Because semaphore_wait, semaphore_wait_ms, semaphore_wait_us can put current
+	thread in waiting state, this functions can be called only from
+	SYSTEM/USER context. Other functions, including semaphore_signal
+	can be called from any context
+	\{
+ */
+
 #include "sem.h"
 #include "sys_call.h"
 #include "sys_calls.h"
 
+/**
+	\brief creates semaphore object.
+	\retval semaphore HANDLE on success. On failure (out of memory), error will be raised
+*/
 HANDLE semaphore_create()
 {
 	return sys_call(SEMAPHORE_CREATE, 0, 0, 0);
 }
 
+/**
+	\brief increments counter
+	\param sem: semaphore handle
+	\retval none
+*/
 void semaphore_signal(HANDLE sem)
 {
 	sys_call(SEMAPHORE_SIGNAL, (unsigned int)sem, 0, 0);
 }
 
+/**
+	\brief wait for semaphore signal
+	\param sem: semaphore handle
+	\param timeout: pointer to TIME structure
+	\retval true on success, false on timeout
+*/
 bool semaphore_wait(HANDLE sem, TIME* timeout)
 {
 	return sys_call(SEMAPHORE_WAIT, (unsigned int)sem, (unsigned int)timeout, 0);
 }
 
+/**
+	\brief wait for semaphore signal
+	\param sem: semaphore handle
+	\param timeout_ms: timeout in milliseconds
+	\retval true on success, false on timeout
+*/
 bool semaphore_wait_ms(HANDLE sem, unsigned int timeout_ms)
 {
 	TIME timeout;
@@ -50,6 +85,12 @@ bool semaphore_wait_ms(HANDLE sem, unsigned int timeout_ms)
 	return sys_call(SEMAPHORE_WAIT, (unsigned int)sem, (unsigned int)&timeout, 0);
 }
 
+/**
+	\brief wait for semaphore signal
+	\param sem: semaphore handle
+	\param timeout_us: timeout in microseconds
+	\retval true on success, false on timeout
+*/
 bool semaphore_wait_us(HANDLE sem, unsigned int timeout_us)
 {
 	TIME timeout;
@@ -57,8 +98,14 @@ bool semaphore_wait_us(HANDLE sem, unsigned int timeout_us)
 	return sys_call(SEMAPHORE_WAIT, (unsigned int)sem, (unsigned int)&timeout, 0);
 }
 
+/**
+	\brief destroys semaphore
+	\param sem: semaphore handle
+	\retval none
+*/
 void semaphore_destroy(HANDLE sem)
 {
 	sys_call(SEMAPHORE_DESTROY, (unsigned int)sem, 0, 0);
 }
 
+/** \} */ // end of semaphore group

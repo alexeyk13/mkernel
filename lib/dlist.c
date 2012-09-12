@@ -24,19 +24,39 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/** \addtogroup lib_dlist dual-linked list
+	\{
+ */
+
 #include "dlist.h"
 #include "dbg.h"
 
+/**
+	\brief clear list
+	\param dlist: address of list
+	\retval: none
+  */
 void dlist_clear(DLIST** dlist)
 {
 	*dlist = NULL;
 }
 
+/**
+	\brief check, if \b DLIST is empty
+	\param dlist: address of list
+	\retval: \b true if empty
+  */
 bool is_dlist_empty(DLIST** dlist)
 {
 	return *dlist == NULL;
 }
 
+/**
+	\brief add item to \b DLIST head
+	\param dlist: address of list
+	\param entry: pointer to object to add
+	\retval: none
+  */
 void dlist_add_head(DLIST** dlist, DLIST* entry)
 {
 	if (*dlist == NULL)
@@ -51,6 +71,12 @@ void dlist_add_head(DLIST** dlist, DLIST* entry)
 	*dlist = entry;
 }
 
+/**
+	\brief add item to \b DLIST tail
+	\param dlist: address of list
+	\param entry: pointer to object to add
+	\retval: none
+  */
 void dlist_add_tail(DLIST** dlist, DLIST* entry)
 {
 	if (*dlist == NULL)
@@ -67,6 +93,13 @@ void dlist_add_tail(DLIST** dlist, DLIST* entry)
 	}
 }
 
+/**
+	\brief add item \b DLIST before existing item
+	\param dlist: address of list
+	\param before: pointer to existing object
+	\param entry: pointer to object to add
+	\retval: none
+  */
 void dlist_add_before(DLIST** dlist, DLIST* before, DLIST* entry)
 {
 	ASSERT(*dlist);
@@ -82,6 +115,13 @@ void dlist_add_before(DLIST** dlist, DLIST* before, DLIST* entry)
 	}
 }
 
+/**
+	\brief add item \b DLIST after existing item
+	\param dlist: address of list
+	\param after: pointer to existing object
+	\param entry: pointer to object to add
+	\retval: none
+  */
 void dlist_add_after(DLIST** dlist, DLIST* after, DLIST* entry)
 {
 	ASSERT(*dlist);
@@ -93,6 +133,11 @@ void dlist_add_after(DLIST** dlist, DLIST* after, DLIST* entry)
 	after->next = entry;
 }
 
+/**
+	\brief remove head item from \b DLIST
+	\param dlist: address of list
+	\retval: none
+  */
 void dlist_remove_head(DLIST** dlist)
 {
 	ASSERT(*dlist);
@@ -106,6 +151,11 @@ void dlist_remove_head(DLIST** dlist)
 	}
 }
 
+/**
+	\brief remove tail item from \b DLIST
+	\param dlist: address of list
+	\retval: none
+  */
 void dlist_remove_tail(DLIST** dlist)
 {
 	ASSERT(*dlist);
@@ -118,6 +168,13 @@ void dlist_remove_tail(DLIST** dlist)
 	}
 }
 
+/**
+	\brief remove item from \b DLIST
+	\details \b DLIST must contain item
+	\param dlist: address of list
+	\param entry: pointer to object to add
+	\retval: none
+  */
 void dlist_remove(DLIST** dlist, DLIST* entry)
 {
 	if ((*dlist) == entry)
@@ -132,18 +189,34 @@ void dlist_remove(DLIST** dlist, DLIST* entry)
 	}
 }
 
+/**
+	\brief go next
+	\param dlist: address of list
+	\retval: none
+  */
 void dlist_next(DLIST** dlist)
 {
 	if (!(*dlist == NULL))
 		(*dlist) = (*dlist)->next;
 }
 
+/**
+	\brief go previous
+	\param dlist: address of list
+	\retval: none
+  */
 void dlist_prev(DLIST** dlist)
 {
 	if (!(*dlist == NULL))
 		(*dlist) = (*dlist)->prev;
 }
 
+/**
+	\brief start enumeration
+	\param dlist: address of list
+	\param de: pointer to existing \ref DLIST_ENUM structure
+	\retval: none
+  */
 void dlist_enum_start(DLIST** dlist, DLIST_ENUM* de)
 {
 	de->start = *dlist;
@@ -151,6 +224,13 @@ void dlist_enum_start(DLIST** dlist, DLIST_ENUM* de)
 	de->has_more = !(*dlist == NULL);
 }
 
+/**
+	\brief get next item
+	\details enumeration must be prepared by \ref dlist_enum_start
+	\param de: pointer to initialized \ref DLIST_ENUM structure
+	\param cur: address of pointer to current item holder
+	\retval: \b true if success, \b false after last item was fetched
+  */
 bool dlist_enum(DLIST_ENUM* de, DLIST** cur)
 {
 	if (!(de->has_more))
@@ -161,6 +241,13 @@ bool dlist_enum(DLIST_ENUM* de, DLIST** cur)
 	return true;
 }
 
+/**
+	\brief get next item with stolen bit flags
+	\details enumeration must be prepared by \ref dlist_enum_start
+	\param de: pointer to initialized \ref DLIST_ENUM structure
+	\param cur: address of pointer to current item holder
+	\retval: \b true if success, \b false after last item was fetched
+  */
 bool dlist_enum_aligned(DLIST_ENUM* de, DLIST** cur)
 {
 	if (!(de->has_more))
@@ -171,6 +258,13 @@ bool dlist_enum_aligned(DLIST_ENUM* de, DLIST** cur)
 	return true;
 }
 
+/**
+	\brief remove item, while enumeration is in progress
+	\param dlist: address of list
+	\param de: pointer to initialized \ref DLIST_ENUM structure
+	\param cur: pointer to item to remove
+	\retval: none
+  */
 void dlist_remove_current_inside_enum(DLIST** dlist, DLIST_ENUM* de, DLIST* cur)
 {
 	if (cur == de->start)
@@ -180,6 +274,12 @@ void dlist_remove_current_inside_enum(DLIST** dlist, DLIST_ENUM* de, DLIST* cur)
 		de->has_more = false;
 }
 
+/**
+	\brief check, if \b DLIST is contains entry
+	\param dlist: address of list
+	\param entry: pointer to object to check
+	\retval: \b true if contains
+  */
 bool is_dlist_contains(DLIST** dlist, DLIST* entry)
 {
 	DLIST_ENUM de;
@@ -192,3 +292,5 @@ bool is_dlist_contains(DLIST** dlist, DLIST* entry)
 	}
 	return false;
 }
+
+/** \} */ // end of lib_dlist group

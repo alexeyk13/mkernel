@@ -52,6 +52,16 @@ void sprintf_handler(void* param, const char *const buf, unsigned int size)
 	*str += size;
 }
 
+/** \addtogroup lib_printf embedded stdio
+	\{
+ */
+
+/**
+	\brief string to unsigned int
+	\param buf: untruncated string
+	\param size: size of buf in bytes
+	\retval integer result. 0 on error
+*/
 unsigned long atou(char* buf, int size)
 {
 	int i;
@@ -60,6 +70,8 @@ unsigned long atou(char* buf, int size)
 		res = res * 10 + buf[i] - '0';
 	return res;
 }
+
+/** \} */ // end of lib_printf group
 
 int utoa(char* buf, unsigned long value, int radix, bool uppercase)
 {
@@ -101,6 +113,18 @@ static inline void pad_zeroes(WRITE_HANDLER write_handler, void *write_param, in
 		write_handler(write_param, zeroes, count);
 }
 
+/** \addtogroup lib_printf embedded stdio
+	\{
+ */
+
+/**
+	\brief format string, using specific handler
+	\param write_handler: user-specified handler
+	\param write_param: param for handler
+	\param fmt: format (see global description)
+	\param va: va_list of arguments
+	\retval none
+*/
 void format(WRITE_HANDLER write_handler, void *write_param, char *fmt, va_list va)
 {
 	char buf[PRINTF_BUF_SIZE];
@@ -362,6 +386,12 @@ void format(WRITE_HANDLER write_handler, void *write_param, char *fmt, va_list v
 		write_handler(write_param, fmt + start, cur - start);
 }
 
+/**
+	\brief format string, using \ref dbg_write as handler
+	\param fmt: format (see global description)
+	\param ...: list of arguments
+	\retval none
+*/
 void printf(char *fmt, ...)
 {
 	va_list va;
@@ -370,6 +400,13 @@ void printf(char *fmt, ...)
 	va_end(va);
 }
 
+/**
+	\brief format string to \b str
+	\param str: resulting string
+	\param fmt: format (see global description)
+	\param ...: list of arguments
+	\retval none
+*/
 void sprintf(char* str, char *fmt, ...)
 {
 	va_list va;
@@ -379,3 +416,5 @@ void sprintf(char* str, char *fmt, ...)
 	*str_cur = 0;
 	va_end(va);
 }
+
+/** \} */ // end of lib_printf group

@@ -46,7 +46,7 @@ typedef enum {
 typedef struct {
 	DLIST list;															//list of threads - active, frozen, or owned by sync object
 	const char* name;
-	unsigned int* sp_cur;											//current sp(if saved) !!TODO: move down
+	unsigned int* sp_cur;											//current sp(if saved)
 	MAGIC;
 	unsigned long flags;
 	unsigned int* sp_top;											//top of stack
@@ -78,14 +78,71 @@ void svc_thread_wakeup(THREAD* thread);
 THREAD* svc_thread_get_current();
 void svc_thread_destroy_current();
 
+/** \addtogroup user_provided user provided functions
+	\{
+ */
+/**
+	\brief user-provided idle task
+	\details This task runs, while other are frozen or waiting.
+	It can't be destroyed, can't be frozen or put in wait state -
+	direct or indirect.
 
-//user idle_task
+	minimal implementation will looks like:
+
+	void idle_task(void)
+	{
+		for (;;) {}
+	}
+
+	however, for power saving for cortex-m3 recommended minimal following task:
+
+	void idle_task(void)
+	{
+		for (;;) {__WFI();}
+	}
+
+	\retval none
+*/
 extern void idle_task(void);
+/** \} */ // end of user_provided group
 
-//hw-related
+/** \addtogroup arch_porting architecture porting
+		For architecture support, all these functions must be implemented.
+		Prototypes of hw-dependend functions. In most cases they are implemented in asm
+	\{
+ */
+/**
+	\brief pend switch context
+	\details Pends context switching and return immediatly.
+
+	On SVC/IRQ leaving, function implementation is called and do following:
+
+	- if (_active_thread) is not NULL, save current thread context on _active_thread stack
+	- load current thread context from _next_thread stack
+	- adjust stack pointer with _next_thread.cur_sp
+	- move _next_thread - > _active_thread, _next_thread = NULL
+	\retval none
+*/
 extern void pend_switch_context(void);
+/**
+	\brief setup initial context
+	\details Just setup context. Real switching will be performed on pend_switch_context, when
+	_next_thread == thread.
+	\param thread: thread handle
+	\param fn: thread start point
+	\param param: thread parameter
+	\retval none
+*/
 extern void thread_setup_context(THREAD* thread, THREAD_FUNCTION fn, void* param);
+/**
+	\brief patch context
+	\details When any sync-object function is called, required waiting action, it will
+	return with "true" result, however, caller thread will be put in "waiting" state.
+	In case of timeouts, we need to patch stack, changing return value.
+	\param thread: thread handle
+	\param res: return value to set
+*/
 extern void thread_patch_context(THREAD* thread, unsigned int res);
-
+/** \} */ // end of arch_porting group
 
 #endif // TASK_PRIVATE_H

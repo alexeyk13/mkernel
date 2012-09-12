@@ -24,6 +24,10 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/** \addtogroup lib_time time
+	\{
+ */
+
 #include "sys_time.h"
 #include "timer.h"
 #include "sys_call.h"
@@ -31,22 +35,43 @@
 #include "irq.h"
 #include "dbg.h"
 
+/**
+	\brief get system time
+	\retval system time
+*/
 time_t get_sys_time()
 {
+
 	return (time_t)sys_call(TIME_GET_SYS_TIME, 0, 0, 0);
 }
 
+/**
+	\brief set system time (update RTC)
+	\param time: new system time
+	\retval none
+*/
 void set_sys_time(time_t time)
 {
 	sys_call(TIME_GET_SYS_TIME, (unsigned int)time, 0, 0);
 }
 
+/**
+	\brief get uptime from system start, including microseconds
+	\param uptime: pointer to provided structure, containing \ref TIME
+	\retval same as uptime parameter
+*/
 TIME* get_uptime(TIME* uptime)
 {
 	sys_call(TIME_GET_UPTIME, (unsigned int)uptime, 0, 0);
 	return uptime;
 }
 
+/**
+	\brief time, elapsed between "from" and now
+	\param from: pointer to provided structure, containing base \ref TIME
+	\param res: pointer to provided structure, containing result \ref TIME
+	\retval same as res parameter
+*/
 TIME* time_elapsed(TIME* from, TIME* res)
 {
 	TIME to;
@@ -55,6 +80,11 @@ TIME* time_elapsed(TIME* from, TIME* res)
 	return res;
 }
 
+/**
+	\brief time, elapsed between "from" and now in milliseconds
+	\param from: pointer to provided structure, containing base \ref TIME
+	\retval elapsed time in milliseconds
+*/
 unsigned int time_elapsed_ms(TIME* from)
 {
 	TIME to;
@@ -63,6 +93,11 @@ unsigned int time_elapsed_ms(TIME* from)
 	return time_to_ms(&to);
 }
 
+/**
+	\brief time, elapsed between "from" and now in microseconds
+	\param from: pointer to provided structure, containing base \ref TIME
+	\retval elapsed time in microseconds
+*/
 unsigned int time_elapsed_us(TIME* from)
 {
 	TIME to;
@@ -70,3 +105,5 @@ unsigned int time_elapsed_us(TIME* from)
 	time_sub(from, &to, &to);
 	return time_to_us(&to);
 }
+
+/** \} */ // end of lib_time group

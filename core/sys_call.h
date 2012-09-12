@@ -30,7 +30,23 @@
 unsigned int sys_call(unsigned int num, unsigned int param1, unsigned int param2, unsigned int param3);
 unsigned int sys_handler(unsigned int num, unsigned int param1, unsigned int param2, unsigned int param3);
 
-//arch-dependent context raiser
+/** \addtogroup arch_porting architecture porting
+	\{
+ */
+/**
+	\brief arch-dependent context raiser
+	\details If current contex is not enough during sys_call, context is raised, using
+	this arch-specific function. After calling, return value is provided.
+
+	For example, for cortex-m3 "svc 0x12" instruction is used.
+
+	\param num: sys-call number
+	\param param1: parameter 1. num-specific
+	\param param2: parameter 2. num-specific
+	\param param3: parameter 3. num-specific
+	\retval result value. num-specific
+*/
 extern unsigned int do_sys_call(unsigned int num, unsigned int param1, unsigned int param2, unsigned int param3);
+/** \} */ // end of arch_porting group
 
 #endif // SYS_CALL_H

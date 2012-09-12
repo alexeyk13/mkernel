@@ -33,23 +33,39 @@
 
 #include "types.h"
 
-//our struct tm is shorter, than POSIX. M-Kernel didn't use tm_wday, tm_yday, tm_isdst and negative values for perfomance reasons, tm_year - is absolute value
+/** \addtogroup lib_time time
+	time routines
+	\{
+ */
+
+/**
+	\brief POSIX analogue of struct tm
+	\our struct tm is shorter, than POSIX. M-Kernel didn't use tm_wday, tm_yday, tm_isdst and negative values for perfomance reasons, tm_year - is absolute value
+*/
 struct tm {
-	unsigned char tm_sec;                   /* seconds after the minute [0, 59] */
-	unsigned char tm_min;                   /* minutes after the hour [0, 59] */
-	unsigned char tm_hour;                  /* hours since midnight [0, 23] */
-	unsigned char tm_mday;                  /* day of the month [1, 31] */
-	unsigned char tm_mon;                   /* months since January [0, 11] */
-	unsigned short tm_year;                 /* years since 0 */
+	unsigned char tm_sec;                   //!< seconds after the minute [0, 59]
+	unsigned char tm_min;                   //!< minutes after the hour [0, 59]
+	unsigned char tm_hour;                  //!< hours since midnight [0, 23]
+	unsigned char tm_mday;                  //!< day of the month [1, 31]
+	unsigned char tm_mon;                   //!< months since January [0, 11]
+	unsigned short tm_year;                 //!< years since 0
 };
 
 //In 2037, please change this to unsigned long long. In 32 bits mcu changing this can significally decrease perfomance
+/**
+	\brief time_t POSIX analogue
+*/
 typedef unsigned long time_t;
 
+/**
+	\brief structure for holding time units
+*/
 typedef struct {
-	time_t sec;
-	unsigned long usec;
+	time_t sec;										//!< seconds
+	unsigned long usec;							//!< microseconds
 }TIME;
+
+/** \} */ // end of lib_time group
 
 //refer to POSIX
 time_t mktime(struct tm* ts);

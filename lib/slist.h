@@ -27,9 +27,18 @@
 #ifndef SLIST_H
 #define SLIST_H
 
-/*
-		slist.h single-linked list
-  */
+/** \addtogroup lib_slist single-linked list
+	single-linked list routines
+
+	single-linked list is used mainly for system objects,
+	however, can be used for user lists.
+
+	\ref SLIST is just a header, added to custom structure
+	as a first element. Using cast it's possible to use
+	any structure as single-linked lists of custom objects.
+
+	\{
+ */
 
 #include "dbg.h"
 
@@ -38,6 +47,12 @@ typedef struct _SLIST
 	struct _SLIST * next;
 }SLIST;
 
+/**
+	\brief add item after existing
+	\param after: pointer to item, after which we need to add
+	\param item: pointer to item to add
+	\retval: none
+  */
 static inline void slist_add_after(SLIST* after, SLIST* item)
 {
 	ASSERT(after);
@@ -46,6 +61,12 @@ static inline void slist_add_after(SLIST* after, SLIST* item)
 	after->next = item;
 }
 
+/**
+	\brief add head item
+	\param list: address of list
+	\param item: pointer to item to add
+	\retval: none
+  */
 static inline void slist_add_head(SLIST** list, SLIST* item)
 {
 	ASSERT(item);
@@ -53,6 +74,11 @@ static inline void slist_add_head(SLIST** list, SLIST* item)
 	*list = item;
 }
 
+/**
+	\brief remove after item
+	\param after: pointer to item, after which we need to add
+	\retval: none
+  */
 static inline void slist_remove_after(SLIST* after)
 {
 	ASSERT(after);
@@ -60,10 +86,18 @@ static inline void slist_remove_after(SLIST* after)
 	after->next = after->next->next;
 }
 
+/**
+	\brief remove head item
+	\param list: address of list
+	\retval: none
+  */
 static inline void slist_remove_head(SLIST** list)
 {
 	ASSERT(*list);
 	*list =(*list)->next;
 }
 
+/** \} */ // end of lib_slist group
+
 #endif // SLIST_H
+

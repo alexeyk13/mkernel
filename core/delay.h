@@ -32,8 +32,8 @@
   */
 
 
-void delay_us(unsigned int us);
+extern void delay_us(unsigned int us);
 //it's preferred to call sleep_ms
-void delay_ms(unsigned int ms);
+extern void delay_ms(unsigned int ms);
 
 #endif // DELAY_H

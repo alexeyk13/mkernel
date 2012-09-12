@@ -27,6 +27,33 @@
 #ifndef DEV_H
 #define DEV_H
 
+/*! \mainpage Main index
+ \tableofcontents
+ M-Kernel documentation
+
+	- \ref about
+	- \ref gettingstarted
+	- core functionality
+		- \ref thread
+		- \ref mutex
+		- \ref event
+		- \ref semaphore
+		- \ref data_queue
+		- \ref message_queue
+	- \ref memory
+	- library functions
+		- \ref lib_time
+		- \ref lib_printf
+		- \ref lib_slist
+		- \ref lib_dlist
+		- \ref lib_rb
+		- \ref lib_rb_block
+	- debug and error handling
+		- \ref error
+		- \ref debug
+		- \ref profiling
+*/
+
 /*
 		dev.h:
 		- device classes abstraction

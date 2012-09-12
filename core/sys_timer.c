@@ -193,7 +193,6 @@ void svc_sys_timer_create(TIMER* timer)
 		find_shoot_next();
 }
 
-extern int qqq;
 void svc_sys_timer_destroy(TIMER* timer)
 {
 	CHECK_CONTEXT(SUPERVISOR_CONTEXT | IRQ_CONTEXT);
