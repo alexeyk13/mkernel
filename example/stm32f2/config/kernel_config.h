@@ -12,6 +12,8 @@
 #define KERNEL_CHECK_CONTEXT					1
 //some kernel statistics
 #define KERNEL_PROFILING						1
+//halt system instead of reset
+#define KERNEL_HALT_ON_FATAL_ERROR			1
 
 //sys_timer specific:
 #define SYS_TIMER_RTC							RTC_0
@@ -87,5 +89,13 @@
 #define SD_CARD_DEBUG_ERRORS					0
 
 #define SDIO_IRQ_PRIORITY						6
+//----------------------------------- keyboard ----------------------------------------------------------------
+#define KEYBOARD_DEBOUNCE_MS					10
+#define KEYBOARD_POLL_MS						100
+#define KEYBOARD_THREAD_PRIORITY				10
+//----------------------------------- sw_timer ----------------------------------------------------------------
+#define SW_TIMER_MODULE							0
+#define SW_TIMER_STACK_SIZE					64
+#define SW_TIMER_PRIORITY						90
 
 #endif // KERNEL_CONFIG_H

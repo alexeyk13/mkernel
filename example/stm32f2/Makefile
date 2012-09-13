@@ -38,8 +38,7 @@ INCLUDE_FOLDERS		= $(KERNEL)/lib config $(KERNEL)/core $(DRVS) $(MOD) $(STARTUP_
 INCLUDES					= $(INCLUDE_FOLDERS:%=-I%)
 VPATH					  += $(INCLUDE_FOLDERS) $(BUILD_DIR)
 #----------------------------------------------------------
-SRC_AS					= delay_cortex_m3.S
-SRC_AS_C					= startup_cortexm.S
+SRC_AS					= startup_cortexm.S delay_cortex_m3.S
 
 SRC_C						= cortex_m3.c
 #arch
@@ -53,7 +52,7 @@ SRC_C					  += dlist.c time.c printf.c rand.c
 SRC_C					  += gpio_user.c console.c dbg_console_private.c dbg_console.c
 SRC_C					  += main.c
 
-OBJ						= $(SRC_AS_C:%.S=%.o) $(SRC_AS:%.S=%.o) $(SRC_C:%.c=%.o)
+OBJ						= $(SRC_AS:%.S=%.o) $(SRC_C:%.c=%.o)
 #----------------------------------------------------------
 DEFINES					= -DHSE_VALUE=$(EXT_OSCILLATOR_FREQ) -D$(MCU_NAME)
 PWD						= $(shell pwd)
@@ -84,11 +83,6 @@ all: $(TARGET_NAME).elf
 	@-mkdir -p $(BUILD_DIR)
 	@echo CC: $<
 	@$(GCC) $(FLAGS_CC) -c ./$< -o $(BUILD_DIR)/$@
-
-.s.o:
-	@-mkdir -p $(BUILD_DIR)
-	@echo AS: $<
-	@$(AS) $(FLAGS_AS) ./$< -o $(BUILD_DIR)/$@
 
 .S.o:
 	@-mkdir -p $(BUILD_DIR)
