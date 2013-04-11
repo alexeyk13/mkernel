@@ -41,7 +41,7 @@ SRC_AS					= startup_cortexm.S delay_cortex_m3.S
 
 SRC_C						= cortex_m3.c
 #arch
-SRC_C					  += rcc_stm32f2.c gpio_stm32f2.c timer_stm32.c uart_stm32.c dma_stm32.c rand_stm32f2.c
+SRC_C					  += rcc_stm32f2.c gpio_stm32.c timer_stm32.c uart_stm32.c dma_stm32.c rand_stm32f2.c
 #core
 SRC_C					  += startup.c mem_pool.c mem.c mem_private.c error.c sys_call.c sys_time.c sys_time_private.c sys_timer.c thread.c thread_private.c
 SRC_C					  += mutex.c mutex_private.c event.c event_private.c sem.c sem_private.c queue.c queue_private.c
