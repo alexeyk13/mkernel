@@ -24,9 +24,8 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "gpio_stm32f2.h"
+#include "gpio_stm32.h"
 #include "arch.h"
-#include "profile.h"
 #include "error.h"
 
 #define PORT(pin)																																(pin / 32)
@@ -34,15 +33,40 @@
 
 
 const GPIO_TypeDef_P GPIO[] =																												{GPIOA, GPIOB, GPIOC, GPIOD, GPIOE, GPIOF, GPIOG, GPIOH, GPIOI};
+
+#if defined(STM32F1)
+const char PIN_MODE_VALUE[] =																												{0x3, 0x4, 0x7, 0x8, 0x8};
+#if defined(STM32F10X_LD) || defined(STM32F10X_LD_VL)
+const uint32_t RCC_GPIO[] =																												{RCC_APB2ENR_IOPAEN, RCC_APB2ENR_IOPBEN, RCC_APB2ENR_IOPCEN,
+																																					 RCC_APB2ENR_IOPDEN};
+#elif defined(STM32F10X_MD) || defined(STM32F10X_MD_VL) || defined(STM32F10X_CL_VL)
+const uint32_t RCC_GPIO[] =																												{RCC_APB2ENR_IOPAEN, RCC_APB2ENR_IOPBEN, RCC_APB2ENR_IOPCEN,
+																																					 RCC_APB2ENR_IOPDEN, RCC_APB2ENR_IOPEEN};
+#else
+const uint32_t RCC_GPIO[] =																												{RCC_APB2ENR_IOPAEN, RCC_APB2ENR_IOPBEN, RCC_APB2ENR_IOPCEN,
+																																					 RCC_APB2ENR_IOPDEN, RCC_APB2ENR_IOPEEN, RCC_APB2ENR_IOPFEN
+																																					 RCC_APB2ENR_IOPGEN};
+#endif //STM32F1
+#define RCC_PORT																																RCC->APB2ENR
+#elif defined(STM32F2)
 const uint32_t RCC_GPIO[] =																												{RCC_AHB1ENR_GPIOAEN, RCC_AHB1ENR_GPIOBEN, RCC_AHB1ENR_GPIOCEN,
 																																					 RCC_AHB1ENR_GPIODEN, RCC_AHB1ENR_GPIOEEN, RCC_AHB1ENR_GPIOFEN,
 																																					 RCC_AHB1ENR_GPIOGEN, RCC_AHB1ENR_GPIOHEN, RCC_AHB1ENR_GPIOIEN};
+#define RCC_PORT																																RCC->AHB1ENR
+#endif
+
+
 const IRQn_Type EXTI_SINGLE_VECTORS[] =																								{EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn, EXTI4_IRQn};
 
-char _used_pins[9] __attribute__ ((section (".sys_bss"))) =																		{0};
-char _syscfg_count __attribute__ ((section (".sys_bss"))) =																		0;
+char _used_pins[GPIO_PORTS_COUNT] __attribute__ ((section (".sys_bss"))) =													{0};
 char _exti_5_9_active __attribute__ ((section (".sys_bss"))) =																	0;
 char _exti_10_15_active __attribute__ ((section (".sys_bss")))	=																0;
+
+#if defined(STM32F1)
+char _afio_remap_count __attribute__ ((section (".sys_bss"))) =																0;
+#elif defined(STM32F2)
+char _syscfg_count __attribute__ ((section (".sys_bss"))) =																		0;
+#endif
 
 static EXTI_HANDLER _exti_handlers[EXTI_LINES_COUNT] __attribute__ ((section (".sys_bss"))) =						{NULL};
 
@@ -128,13 +152,29 @@ void EXTI15_10_IRQHandler(void)
 void gpio_enable_pin_power(GPIO_CLASS pin)
 {
 	if (_used_pins[PORT(pin)]++ == 0)
-		RCC->AHB1ENR |= RCC_GPIO[PORT(pin)];
+		RCC_PORT |= RCC_GPIO[PORT(pin)];
 }
 
 void gpio_enable_pin(GPIO_CLASS pin, PIN_MODE mode)
 {
 	gpio_enable_pin_power(pin);
 
+#if defined(STM32F1)
+	if (PIN(pin) >= 8)
+	{
+		GPIO_PORT[PORT(pin)]->CRH &= ~(0xful << ((PIN(pin) - 8) * 4ul));
+		GPIO_PORT[PORT(pin)]->CRH |= ((uint32_t)PIN_MODE_VALUE[(int)mode] << ((PIN(pin) - 8) * 4ul));
+	}
+	else
+	{
+		GPIO_PORT[PORT(pin)]->CRL &= ~(0xful << (PIN(pin) * 4ul));
+		GPIO_PORT[PORT(pin)]->CRL |= ((uint32_t)PIN_MODE_VALUE[(int)mode] << (PIN(pin) * 4ul));
+	}
+	if (mode == PIN_MODE_IN_PULLUP)
+		GPIO_PORT[PORT(pin)]->ODR |= 1 << PIN(pin);
+	else
+		GPIO_PORT[PORT(pin)]->ODR &= ~(1 << PIN(pin));
+#elif defined(STM32F2)
 	//in/out
 	GPIO[PORT(pin)]->MODER &= ~(3 << (PIN(pin) * 2));
 	switch (mode)
@@ -175,70 +215,90 @@ void gpio_enable_pin(GPIO_CLASS pin, PIN_MODE mode)
 	default:
 		break;
 	}
+#endif
 }
 
 void gpio_disable_pin(GPIO_CLASS pin)
 {
+#if defined(STM32F1)
+	if (PIN(pin) >= 8)
+	{
+		GPIO_PORT[PORT(pin)]->CRH &= ~(0xful << ((PIN(pin) - 8) * 4ul));
+		GPIO_PORT[PORT(pin)]->CRH |= ((uint32_t)PIN_MODE_VALUE[(int)PIN_MODE_IN] << ((PIN(pin) - 8) * 4ul));
+	}
+	else
+	{
+		GPIO_PORT[PORT(pin)]->CRL &= ~(0xful << (PIN(pin) * 4ul));
+		GPIO_PORT[PORT(pin)]->CRL |= ((uint32_t)PIN_MODE_VALUE[(int)PIN_MODE_IN] << (PIN(pin) * 4ul));
+	}
+	GPIO_PORT[PORT(pin)]->ODR &= ~(1 << PIN(pin));
+#elif defined(STM32F2)
 	GPIO[PORT(pin)]->MODER &= ~(3 << (PIN(pin) * 2));
 	GPIO[PORT(pin)]->PUPDR &= ~(3 << (PIN(pin) * 2));
 	GPIO[PORT(pin)]->OSPEEDR |= (3 << (PIN(pin) * 2));
-
+#endif
 	if (--_used_pins[PORT(pin)] == 0)
-		RCC->AHB1ENR &= ~RCC_GPIO[PORT(pin)];
+		RCC_PORT &= ~RCC_GPIO[PORT(pin)];
 }
 
-void gpio_enable_afio(GPIO_CLASS pin, AFIO_MODE mode, AFIO_PUSH_MODE push_mode)
+void gpio_enable_afio(GPIO_CLASS pin, AFIO_MODE mode)
 {
 	gpio_enable_pin_power(pin);
 
+#if defined(STM32F1)
+	if (PIN(pin) >= 8)
+	{
+		GPIO_PORT[PORT(pin)]->CRH &= ~(0xful << ((PIN(pin) - 8) * 4ul));
+		GPIO_PORT[PORT(pin)]->CRH |= ((uint32_t)mode << ((PIN(pin) - 8) * 4ul));
+	}
+	else
+	{
+		GPIO_PORT[PORT(pin)]->CRL &= ~(0xful << (PIN(pin) * 4ul));
+		GPIO_PORT[PORT(pin)]->CRL |= ((uint32_t)mode << (PIN(pin) * 4ul));
+	}
+	GPIO_PORT[PORT(pin)]->ODR &= ~(1 << PIN(pin));
+#elif defined(STM32F2)
 	GPIO[PORT(pin)]->AFR[PIN(pin) >= 8 ? 1 : 0] &= ~(0xful << ((PIN(pin) & 0x7ul) * 4ul));
 	GPIO[PORT(pin)]->AFR[PIN(pin) >= 8 ? 1 : 0] |= ((uint32_t)(mode & 0xf) << ((PIN(pin) & 0x7ul) * 4ul));
 
-	GPIO[PORT(pin)]->MODER &= ~(3 << (PIN(pin) * 2));
-	GPIO[PORT(pin)]->MODER |= (2 << (PIN(pin) * 2));
-	GPIO[PORT(pin)]->OSPEEDR |= (3 << (PIN(pin) * 2));
-
-	//out pp/od
-	switch (push_mode)
+	if (mode == AFIO_MODE_ANALOG)
 	{
-	case AFIO_PULL_UP:
-	case AFIO_PULL_DOWN:
-	case AFIO_NO_PULL:
-		GPIO[PORT(pin)]->OTYPER &= ~(1 << PIN(pin));
-		break;
-	default:
-		GPIO[PORT(pin)]->OTYPER |= 1 << PIN(pin);
+		GPIO[PORT(pin)]->MODER |= (3 << (PIN(pin) * 2));
 	}
+	else
+	{
+		GPIO[PORT(pin)]->MODER &= ~(3 << (PIN(pin) * 2));
+		GPIO[PORT(pin)]->MODER |= (2 << (PIN(pin) * 2));
+	}
+	GPIO[PORT(pin)]->OSPEEDR |= (3 << (PIN(pin) * 2));
+	GPIO[PORT(pin)]->OTYPER &= ~(1 << PIN(pin));
 
 	//pull up/down
 	GPIO[PORT(pin)]->PUPDR &= ~(3 << (PIN(pin) * 2));
-	switch (push_mode)
+	switch (mode)
 	{
-	case AFIO_PULL_UP:
-	case AFIO_OD_UP:
+	case AFIO_MODE_FSMC_SDIO_OTG_FS_PULL_UP:
 		GPIO[PORT(pin)]->PUPDR |= (1 << (PIN(pin) * 2));
-		break;
-	case AFIO_PULL_DOWN:
-	case AFIO_OD_DOWN:
-		GPIO[PORT(pin)]->PUPDR |= (2 << (PIN(pin) * 2));
 		break;
 	default:
 		break;
 	}
-}
-
-void gpio_enable_analog(GPIO_CLASS pin)
-{
-	gpio_enable_pin_power(pin);
-	GPIO[PORT(pin)]->MODER |= (3 << (PIN(pin) * 2));
+#endif
 }
 
 void gpio_set_pin(GPIO_CLASS pin, bool set)
 {
+#if defined(STM32F1)
+	if (set)
+		GPIO[PORT(pin)]->BSRR = 1 << PIN(pin);
+	else
+		GPIO[PORT(pin)]->BRR = 1 << PIN(pin);
+#elif defined(STM32F2)
 	if (set)
 		GPIO[PORT(pin)]->BSRRL = 1 << PIN(pin);
 	else
 		GPIO[PORT(pin)]->BSRRH = 1 << PIN(pin);
+#endif
 }
 
 bool gpio_get_pin(GPIO_CLASS pin)
@@ -253,18 +313,53 @@ bool gpio_get_out_pin(GPIO_CLASS pin)
 
 void gpio_disable_jtag()
 {
+#if defined(STM32F1)
+	afio_remap();
+	AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_DISABLE;
+#elif defined(STM32F2)
 	gpio_enable_pin(GPIO_A13, PIN_MODE_IN);
 	gpio_enable_pin(GPIO_A14, PIN_MODE_IN);
 	gpio_enable_pin(GPIO_A15, PIN_MODE_IN);
 	gpio_enable_pin(GPIO_B3, PIN_MODE_IN);
 	gpio_enable_pin(GPIO_B4, PIN_MODE_IN);
+#endif
 }
+
+#if defined(STM32F1)
+void afio_remap()
+{
+	if (_afio_remap_count++ == 0)
+		RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
+}
+
+void afio_unmap()
+{
+	if (--_afio_remap_count == 0)
+		RCC->APB2ENR &= ~RCC_APB2ENR_AFIOEN;
+}
+
+#endif
 
 void gpio_exti_enable(EXTI_CLASS exti, EXTI_MODE mode, EXTI_HANDLER callback, int priority)
 {
 	if (PIN(exti) < EXTI_LINES_COUNT)
 	{
 		_exti_handlers[PIN(exti)] = callback;
+#if defined(STM32F1)
+		gpio_enable_pin(exti, PIN_MODE_IN);
+		AFIO->EXTICR[PIN(exti) / 4] &= ~(0xful << (uint32_t)(PIN(exti) & 3ul));
+		AFIO->EXTICR[PIN(exti) / 4] |= ((uint32_t)port << (uint32_t)(PIN(exti) & 3ul));
+
+		EXTI->IMR |= 1ul << PIN(exti);
+		EXTI->EMR |= 1ul << PIN(exti);
+
+		EXTI->RTSR &= ~(1ul << PIN(exti));
+		EXTI->FTSR &= ~(1ul << PIN(exti));
+		if (mode & EXTI_MODE_RISING)
+			EXTI->RTSR |= (1ul << PIN(exti));
+		if (mode & EXTI_MODE_FALLING)
+			EXTI->FTSR |= (1ul << PIN(exti));
+#elif defined(STM32F2)
 		if (_syscfg_count++ == 0)
 			RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 		//connect to event
@@ -283,7 +378,7 @@ void gpio_exti_enable(EXTI_CLASS exti, EXTI_MODE mode, EXTI_HANDLER callback, in
 
 		EXTI->IMR |= 1 << PIN(exti);
 		EXTI->EMR |= 1 << PIN(exti);
-
+#endif
 		//enable irq, if needed
 		if (PIN(exti) <= 4)
 		{
@@ -329,11 +424,20 @@ void gpio_exti_disable(EXTI_CLASS exti)
 				NVIC_DisableIRQ(EXTI15_10_IRQn);
 		}
 
+#if defined(STM32F1)
+		EXTI->IMR &= ~(1ul << PIN(exti));
+		EXTI->EMR &= ~(1ul << PIN(exti));
+
+		EXTI->RTSR &= ~(1ul << PIN(exti));
+		EXTI->FTSR &= ~(1ul << PIN(exti));
+#elif defined(STM32F2)
 		if (--_syscfg_count == 0)
 			RCC->APB2ENR &= ~RCC_APB2ENR_SYSCFGEN;
 
 		EXTI->IMR &= ~(1 << PIN(exti));
 		EXTI->EMR &= ~(1 << PIN(exti));
+#endif
+
 		_exti_handlers[PIN(exti)] = NULL;
 	}
 	else

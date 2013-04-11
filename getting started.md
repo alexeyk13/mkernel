@@ -44,10 +44,10 @@ Critical options are:
 \b MCU_NAME 				- name of target MCU. Supported MCU you can find inside /arch folder. Or you can add your own custom MCU. Refer to porting help.\n
 \b EXT_OSCILLATOR_FREQ	- frequency in Hz of target crystall. If no external crystall is used, you need to set this value to 0\n
 
-STM32-specific:\n
+cortex-m3 specific:\n
 
 \b CMSIS_DIR				- path to CMSIS library\n
-\b CMSIS_DEVICE			- uncomment one of CMSIS device class. For now, only STM32F2xx is supported\n
+\b CMSIS_DEVICE_DIR		- uncomment one of CMSIS device folder. For now, only STM32 F2xx is supported\n
 
 Hardware config
 ---------------

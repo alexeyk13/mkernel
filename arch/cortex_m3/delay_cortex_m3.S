@@ -30,7 +30,7 @@
 
 /* imported global constant and functions */
 	.extern _core_cycles_us
-	.extern _core_cycles_ns
+	.extern _core_cycles_ms
 
 	.section	.text, "ax"
 	.syntax unified

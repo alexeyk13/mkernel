@@ -14,9 +14,6 @@ NM							= $(CROSS)nm
 #----------------------------------------------------------
 EXT_OSCILLATOR_FREQ	= 25000000
 MCU_NAME					= STM32F215RG
-CMSIS_DEVICE			= STM32F2xx
-#CMSIS_DEVICE			= STM32F10x
-#CMSIS_DEVICE			= STM32F4xx
 TARGET_NAME				= stm32f2
 #----------------------------------------------------------
 BUILD_DIR				= build
@@ -26,7 +23,9 @@ LDS_SCRIPT				= $(KERNEL)/arch/arm.ld.S
 #----------------------------------------------------------
 LIBS_DIR					= ../../../libs
 CMSIS_DIR				= $(LIBS_DIR)/CMSIS
-CMSIS_DEVICE_DIR		= $(CMSIS_DIR)/Device/ST/$(CMSIS_DEVICE)
+#CMSIS_DEVICE_DIR		= $(CMSIS_DIR)/Device/ST/STM32F10x
+CMSIS_DEVICE_DIR		= $(CMSIS_DIR)/Device/ST/STM32F2xx
+#CMSIS_DEVICE_DIR		= $(CMSIS_DIR)/Device/ST/STM32F4xx
 #----------------------------------------------------------
 OEM_LIBS					= $(CMSIS_DIR)/Include $(CMSIS_DEVICE_DIR)/Include
 ARCH						= $(KERNEL)/arch $(KERNEL)/arch/cortex_m3 $(KERNEL)/arch/cortex_m3/stm

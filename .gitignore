@@ -3,3 +3,11 @@ example/stm32f2/stm32f2.pro.user
 example/stm32f2/build
 example/stm32f2/build/*.*
 example/stm32f2/build/*
+example/stm32f2usbreader/stm32f2usbreader.pro
+example/stm32f2usbreader/stm32f2usbreader.pro.user
+example/stm32f2usbreader/build
+example/stm32f2usbreader/build/*
+example/stm32f2usbreader/build/*.*
+example/stm32f2usbreader/output
+example/stm32f2usbreader/output/*
+example/stm32f2usbreader/output/*.*

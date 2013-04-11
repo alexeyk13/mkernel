@@ -25,7 +25,6 @@
 */
 
 #include "dma_stm32.h"
-#include "profile.h"
 #include "error.h"
 
 const DMA_FULL_TypeDef_P DMA[] =					{DMA1_FULL, DMA2_FULL};

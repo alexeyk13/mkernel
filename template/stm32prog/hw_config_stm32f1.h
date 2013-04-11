@@ -40,8 +40,8 @@
 
 //--------------------- USART hw config -----------------------------------------
 //each bit for port
-//#define USART_RX_DISABLE_MASK_DEF				(1 << UART_1)
-#define USART_RX_DISABLE_MASK_DEF				(0)
+#define USART_RX_DISABLE_MASK_DEF				(1 << 0)
+//#define USART_RX_DISABLE_MASK_DEF				(0)
 #define USART_TX_DISABLE_MASK_DEF				(0)
 //USART1
 /*
@@ -151,6 +151,7 @@
 //usually core reset only needed on dynamic core changing
 #define USB_STM_RESET_CORE							0
 //--------------------- SDIO hw config ---------------------------------------
+#define SDIO_DMA_ENABLED
 #define SDIO_DMA_STREAM								DMA_STREAM_3
 //#define SDIO_DMA_STREAM								DMA_STREAM_6
 

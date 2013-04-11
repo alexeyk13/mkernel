@@ -27,7 +27,6 @@
 #include "uart.h"
 #include "arch.h"
 #include "hw_config.h"
-#include "profile.h"
 #include "gpio.h"
 #include "rcc.h"
 #include "irq.h"
@@ -35,22 +34,30 @@
 #include "mem_private.h"
 #include "error.h"
 
+#include "gpio_stm32.h"
 #if defined(STM32F1)
 #include "rcc_stm32f1.h"
-#include "gpio_stm32f1.h"
 #elif defined(STM32F2)
 #include "rcc_stm32f2.h"
-#include "gpio_stm32f2.h"
 #elif defined(STM32F4)
 #include "rcc_stm32f4.h"
-#include "gpio_stm32f4.h"
 #endif
 
 typedef USART_TypeDef* USART_TypeDef_P;
 
+#if defined(STM32F1)
+const USART_TypeDef_P USART[]							= {USART1, USART2, USART3, UART4, UART5};
+const GPIO_CLASS UART_TX_PINS[]						= {USART1_TX_PIN, USART2_TX_PIN, USART3_TX_PIN, UART4_TX_PIN, GPIO_C12};
+const GPIO_CLASS UART_RX_PINS[]						= {USART1_RX_PIN, USART2_RX_PIN, USART3_RX_PIN, UART4_RX_PIN, GPIO_D2};
+const uint32_t RCC_UART[] =							{RCC_APB2ENR_USART1EN, RCC_APB1ENR_USART2EN, RCC_APB1ENR_USART3EN, RCC_APB1ENR_UART4EN, RCC_APB1ENR_UART5EN};
+const IRQn_Type UART_IRQ_VECTORS[] =				{USART1_IRQn, USART2_IRQn, USART3_IRQn, UART4_IRQn, UART5_IRQn};
+#elif defined(STM32F2)
 const USART_TypeDef_P USART[]							= {USART1, USART2, USART3, UART4, UART5, USART6};
 const GPIO_CLASS UART_TX_PINS[]						= {USART1_TX_PIN, USART2_TX_PIN, USART3_TX_PIN, UART4_TX_PIN, GPIO_C12, USART6_TX_PIN};
 const GPIO_CLASS UART_RX_PINS[]						= {USART1_RX_PIN, USART2_RX_PIN, USART3_RX_PIN, UART4_RX_PIN, GPIO_D2, USART6_RX_PIN};
+const uint32_t RCC_UART[] =							{RCC_APB2ENR_USART1EN, RCC_APB1ENR_USART2EN, RCC_APB1ENR_USART3EN, RCC_APB1ENR_UART4EN, RCC_APB1ENR_UART5EN, RCC_APB2ENR_USART6EN};
+const IRQn_Type UART_IRQ_VECTORS[] =				{USART1_IRQn, USART2_IRQn, USART3_IRQn, UART4_IRQn, UART5_IRQn, USART6_IRQn};
+#endif
 
 #define UART_ERROR_MASK									0xf
 
@@ -59,8 +66,6 @@ const GPIO_CLASS UART_RX_PINS[]						= {USART1_RX_PIN, USART2_RX_PIN, USART3_RX_
 #define ENABLE_TRANSMITTER()							USART[port]->CR1 |= USART_CR1_TE
 #define DISABLE_TRANSMITTER()							USART[port]->CR1 &= ~(USART_CR1_TE)
 
-const uint32_t RCC_UART[] =							{RCC_APB2ENR_USART1EN, RCC_APB1ENR_USART2EN, RCC_APB1ENR_USART3EN, RCC_APB1ENR_UART4EN, RCC_APB1ENR_UART5EN, RCC_APB2ENR_USART6EN};
-const IRQn_Type UART_IRQ_VECTORS[] =				{USART1_IRQn, USART2_IRQn, USART3_IRQn, UART4_IRQn, UART5_IRQn, USART6_IRQn};
 const int USART_RX_DISABLE_MASK =					USART_RX_DISABLE_MASK_DEF;
 const int USART_TX_DISABLE_MASK =					USART_TX_DISABLE_MASK_DEF;
 
@@ -256,10 +261,21 @@ extern void uart_enable(UART_CLASS port, UART_CB *cb, void *param, int priority)
 			uart->read_size = 0;
 			uart->write_size = 0;
 			//setup pins
+#if defined(STM32F1)
 			if ((USART_TX_DISABLE_MASK & (1 << port)) == 0)
-				gpio_enable_afio(UART_TX_PINS[port], port < UART_4 ? AFIO_MODE_USART1_2_3 : AFIO_MODE_UART_4_5_USART_6, AFIO_PULL_UP);
+				gpio_enable_afio(UART_TX_PINS[port], AFIO_MODE_PUSH_PULL);
 			if ((USART_RX_DISABLE_MASK & (1 << port)) == 0)
-				gpio_enable_afio(UART_RX_PINS[port], port < UART_4 ? AFIO_MODE_USART1_2_3 : AFIO_MODE_UART_4_5_USART_6, AFIO_PULL_UP);
+				gpio_enable(UART_RX_PINS[port]);
+#if (USART_REMAP_MASK)
+			if ((1 << port) & USART_REMAP_MASK)
+				afio_remap();
+#endif //USART_REMAP_MASK
+#elif defined(STM32F2)
+			if ((USART_TX_DISABLE_MASK & (1 << port)) == 0)
+				gpio_enable_afio(UART_TX_PINS[port], port < UART_4 ? AFIO_MODE_USART1_2_3 : AFIO_MODE_UART_4_5_USART_6);
+			if ((USART_RX_DISABLE_MASK & (1 << port)) == 0)
+				gpio_enable_afio(UART_RX_PINS[port], port < UART_4 ? AFIO_MODE_USART1_2_3 : AFIO_MODE_UART_4_5_USART_6);
+#endif
 
 			//power up
 			if (port == UART_1 || port == UART_6)
@@ -300,6 +316,11 @@ void uart_disable(UART_CLASS port)
 			gpio_disable_pin(UART_TX_PINS[port]);
 		if ((USART_RX_DISABLE_MASK & (1 << port)) == 0)
 			gpio_disable_pin(UART_RX_PINS[port]);
+
+#if (USART_REMAP_MASK)
+		if ((1 << port) & USART_REMAP_MASK)
+			afio_unmap();
+#endif //USART_REMAP_MASK
 
 		sys_free(_uart_handlers[port]);
 		_uart_handlers[port] = NULL;

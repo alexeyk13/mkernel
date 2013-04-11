@@ -289,6 +289,10 @@ SVC_Handler:
 PendSV_Handler:
 	/*save*/
 	cpsid	i
+	ldr	r2, =_next_thread
+	ldr	r2, [r2]
+	cmp	r2, #0								@late arrival of pendSV can cause double-calling
+	beq	context_exit
 	ldr	r3, =_active_thread				@_active_thread will be NULL on startup/task destroy
 	ldr	r3, [r3]
 	cmp	r3, #0
@@ -299,19 +303,17 @@ PendSV_Handler:
 	str	r0, [r3, #SP_CUR_OFFSET]		@save sp on thread sp_cur
 
 load_context:
-	ldr	r3, =_next_thread
-	ldr	r3, [r3]
-
-	ldr	r0, [r3, #SP_CUR_OFFSET]		@load sp from thread sp_cur
+	ldr	r0, [r2, #SP_CUR_OFFSET]		@load sp from thread sp_cur
 	ldmia	r0!, {r4-r11}						@load other context from stack
 	msr	psp, r0
 
 	ldr	r0, =_active_thread
-	str	r3, [r0]
+	str	r2, [r0]
 	ldr	r0, =_next_thread
-	mov	r3, #0
-	str	r3, [r0]
+	mov	r2, #0
+	str	r2, [r0]
 
+context_exit:
 	cpsie i
 	//return to thread mode
 	ldr	pc, =0xfffffffd

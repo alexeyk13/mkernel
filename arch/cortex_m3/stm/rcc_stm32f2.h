@@ -27,7 +27,9 @@
 #ifndef RCC_STM32F2_H
 #define RCC_STM32F2_H
 
+#if defined(STM32F2)
 extern unsigned long _fs_freq;
+#endif
 extern unsigned long _ahb_freq;
 extern unsigned long _apb1_freq;
 extern unsigned long _apb2_freq;

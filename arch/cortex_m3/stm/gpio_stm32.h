@@ -24,11 +24,11 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef GPIO_STM32F2_H
-#define GPIO_STM32F2_H
+#ifndef GPIO_STM32_H
+#define GPIO_STM32_H
 
 /*
-	stm32f2xx-specific hardware configuration
+	stm32fxxx-specific hardware configuration
  */
 
 #include "dev.h"
@@ -36,6 +36,11 @@
 #include "gpio.h"
 
 typedef enum {
+#if defined(STM32F1)
+	AFIO_MODE_ANALOG = 0x0
+	AFIO_MODE_PUSH_PULL = 0xb,
+	AFIO_MODE_OD = 0xf
+#elif defined(STM32F2)
 	AFIO_MODE_SYS = 0,
 	AFIO_MODE_TIM1_2,
 	AFIO_MODE_TIM3_4_5,
@@ -51,24 +56,22 @@ typedef enum {
 	AFIO_MODE_FSMC_SDIO_OTG_FS,
 	AFIO_MODE_DCMI,
 	AFIO_MODE_14,
-	AFIO_MODE_EVENTOUT
+	AFIO_MODE_EVENTOUT,
+	AFIO_MODE_ANALOG = 0x10,
+	AFIO_MODE_FSMC_SDIO_OTG_FS_PULL_UP = 0x1c
+#endif
 }AFIO_MODE;
-
-typedef enum {
-	AFIO_PULL_UP = 0,
-	AFIO_PULL_DOWN,
-	AFIO_NO_PULL,
-	AFIO_OD_UP,
-	AFIO_OD_DOWN,
-	AFIO_OD_NO_PULL
-}AFIO_PUSH_MODE;
 
 typedef GPIO_TypeDef* GPIO_TypeDef_P;
 extern const GPIO_TypeDef_P GPIO[];
 
-//stm32f2 specific, for internal use of drivers
-void gpio_enable_afio(GPIO_CLASS pin, AFIO_MODE mode, AFIO_PUSH_MODE push_mode);
-void gpio_enable_analog(GPIO_CLASS pin);
+//stm32 specific, for internal use for drivers
+void gpio_enable_afio(GPIO_CLASS pin, AFIO_MODE mode);
 void gpio_disable_jtag();
 
-#endif // GPIO_STM32F2_H
+#if defined(STM32F1)
+void afio_remap();
+void afio_unmap();
+#endif
+
+#endif // GPIO_STM32_H

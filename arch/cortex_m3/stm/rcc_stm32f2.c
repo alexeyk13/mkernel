@@ -27,25 +27,14 @@
 #include "rcc.h"
 #include "arch.h"
 #include "hw_config.h"
-#include "profile.h"
 #include "delay.h"
-
-#define VCO_MIN										64000000l
-#define VCO_MAX										432000000l
-
-#define N_MIN											63l
-#define N_MAX											432l
-#define P_MIN											2l
-#define P_MAX											8l
-#define Q_MIN											2l
-#define Q_MAX											15l
-
-const unsigned int BUS_PRESCALLER[]				= {1, 2, 3, 4, 6, 7, 8, 9};
 
 unsigned long _core_freq  __attribute__ ((section (".sys_bss"))) =		0;
 unsigned long _core_cycles_us;
 unsigned long _core_cycles_ms;
+#if defined(STM32F2)
 unsigned long _fs_freq  __attribute__ ((section (".sys_bss"))) =			0;
+#endif
 unsigned long _ahb_freq  __attribute__ ((section (".sys_bss"))) =			0;
 unsigned long _apb1_freq  __attribute__ ((section (".sys_bss"))) =		0;
 unsigned long _apb2_freq  __attribute__ ((section (".sys_bss"))) =		0;
@@ -63,6 +52,56 @@ static inline bool turn_hse_on()
 	}
 	return false;
 }
+
+#if defined(STM32F1)
+#define RCC_CFGR_PLL_MUL_POS		18ul
+
+#define PLL_DIV_MIN					1
+#define PLL_DIV_MAX					16
+#define PLL_MUL_MIN					2
+#define PLL_MUL_MAX					16
+
+static inline unsigned long setup_pll(uint32_t pll_source, unsigned long desired_freq)
+{
+	uint32_t base_freq = pll_source == RCC_CFGR_PLLSRC ? HSE_VALUE : HSI_VALUE / 2ul;
+	uint32_t i, j, div, mul;
+
+	div = i = PLL_DIV_MIN;
+	mul = j = PLL_MUL_MIN;
+	uint32_t freq_diff = desired_freq;
+	for (i = PLL_DIV_MIN; (i <= PLL_DIV_MAX) && freq_diff; ++i)
+		for (j = PLL_MUL_MIN; j <= PLL_MUL_MAX; ++j)
+		{
+			if (base_freq / i * j > MAX_CORE_FREQ)
+				break;
+			int cur_freq_diff = diff(desired_freq, base_freq / i * j);
+			if (cur_freq_diff < freq_diff)
+			{
+				freq_diff = cur_freq_diff;
+				div = i;
+				mul = j;
+			}
+		}
+
+	//turn PLL on
+	RCC->CFGR |= (((uint32_t)mul - 2ul) << RCC_CFGR_PLL_MUL_POS) | pll_source;
+	RCC->CFGR2 |= (uint32_t)div - 1ul;
+	RCC->CR |= RCC_CR_PLLON;
+	while (!(RCC->CR & RCC_CR_PLLRDY)) {}
+
+	return base_freq / div * mul;
+}
+#elif defined(STM32F2)
+
+#define VCO_MIN										64000000l
+#define VCO_MAX										432000000l
+
+#define N_MIN											63l
+#define N_MAX											432l
+#define P_MIN											2l
+#define P_MAX											8l
+#define Q_MIN											2l
+#define Q_MAX											15l
 
 static inline unsigned long setup_pll(uint32_t pll_source, unsigned long desired_freq)
 {
@@ -147,6 +186,7 @@ static inline unsigned long setup_pll(uint32_t pll_source, unsigned long desired
 
 	return (m_in * n) / p;
 }
+#endif //STM32F1/STM32F2
 
 static inline void switch_to_source (uint32_t source)
 {
@@ -180,7 +220,7 @@ static inline void setup_buses(uint32_t core_freq)
 
 	//APB1
 	RCC->CFGR &= ~RCC_CFGR_PPRE1;
-	//maximum frequency 30MHz
+	//maximum frequency 30(6)MHz
 	if (core_freq > MAX_APB1_FREQ)
 	{
 		if (core_freq / 2 > MAX_APB1_FREQ)
@@ -202,24 +242,46 @@ static inline void setup_buses(uint32_t core_freq)
 	}
 }
 
+#if defined(STM32F1)
 static inline void tune_flash_latency(uint32_t ahb_freq)
 {
-	uint32_t latency = 0;
 #ifdef UNSTUCK_FLASH
-	latency = FLASH_ACR_LATENCY_3WS;
+	FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY_2WS;
+#else
+	if (ahb_freq > 48000000)
+		FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY_2WS;
+	else 	if (ahb_freq > 24000000)
+		FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY_1WS;
+	else
+		FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY_0WS;
+#endif
+}
+
+#elif defined(STM32F2)
+static inline void tune_flash_latency(uint32_t ahb_freq)
+{
+#ifdef UNSTUCK_FLASH
+	FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_3WS;
 #else
 	if (ahb_freq > 90000000)
-		latency = FLASH_ACR_LATENCY_3WS;
+		FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_3WS;
 	else 	if (ahb_freq > 60000000)
-		latency = FLASH_ACR_LATENCY_2WS;
+		FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_2WS;
 	else 	if (ahb_freq > 30000000)
-		latency = FLASH_ACR_LATENCY_1WS;
+		FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_1WS;
 	else
-		latency = FLASH_ACR_LATENCY_0WS;
+		FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_0WS;
+#endif
+}
 #endif
 
-	FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | latency;
-}
+#ifndef RCC_CSR_WDGRSTF
+#define RCC_CSR_WDGRSTF RCC_CSR_IWDGRSTF
+#endif
+
+#ifndef RCC_CSR_PADRSTF
+#define RCC_CSR_PADRSTF RCC_CSR_PINRSTF
+#endif
 
 RESET_REASON get_reset_reason()
 {
@@ -237,43 +299,24 @@ RESET_REASON get_reset_reason()
 	return res;
 }
 
-uint32_t get_core_freq()
-{
-	uint32_t res = HSI_VALUE;
-	unsigned int vco, m, n, p;
-	switch (RCC->CFGR & RCC_CFGR_SWS)
-	{
-		case RCC_CFGR_SWS_HSE:
-			res = HSE_VALUE;
-			break;
-		case RCC_CFGR_SWS_PLL:
-			m = RCC->PLLCFGR & RCC_PLLCFGR_PLLM;
-			n = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> 6;
-			p = (((RCC->PLLCFGR & RCC_PLLCFGR_PLLP) >>16) + 1) * 2;
-			if (RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC_HSE)
-				vco = (HSE_VALUE / m) * n;
-			else
-				vco = (HSI_VALUE / m) * n;
-			res = vco / p;
-			break;
-	}
-	return res;
-}
-
 unsigned long set_core_freq(unsigned long desired_freq)
 {
-	uint32_t ahb1, ahb2, ahb3, apb1, apb2;
+	uint32_t apb1, apb2;
 	//disable all periphery
 	apb1 = RCC->APB1ENR;
 	RCC->APB1ENR = 0;
 	apb2 = RCC->APB2ENR;
 	RCC->APB2ENR = 0;
+
+#if defined(STM32F2)
+	uint32_t ahb1, ahb2, ahb3;
 	ahb1 = RCC->AHB1ENR;
 	RCC->AHB1ENR = 0;
 	ahb2 = RCC->AHB2ENR;
 	RCC->AHB2ENR = 0;
 	ahb3 = RCC->AHB3ENR;
 	RCC->AHB3ENR = 0;
+#endif
 
 	_core_freq = desired_freq == 0 || desired_freq > MAX_CORE_FREQ ? MAX_CORE_FREQ : desired_freq;
 
@@ -287,9 +330,11 @@ unsigned long set_core_freq(unsigned long desired_freq)
 	switch_to_source(RCC_CFGR_SW_PLL);
 
 	//restore all periphery
+#if defined(STM32F2)
 	RCC->AHB1ENR = ahb1;
 	RCC->AHB2ENR = ahb2;
 	RCC->AHB3ENR = ahb3;
+#endif
 	RCC->APB1ENR = apb1;
 	RCC->APB2ENR = apb2;
 

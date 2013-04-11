@@ -105,6 +105,10 @@ void svc_stack_stat()
 }
 #endif //KERNEL_PROFILING
 
+#include "thread_private.h"
+extern THREAD* _next_thread;
+
+
 void on_hard_fault(unsigned int ret_value, unsigned int* stack_value)
 {
 	unsigned int caller_address = stack_value[6];
@@ -124,6 +128,8 @@ void on_hard_fault(unsigned int ret_value, unsigned int* stack_value)
 	}
 	else
 	{
+		printf("next thread: %#08x\n\r", _next_thread);
+
 		if (SCB->HFSR & SCB_HFSR_VECTTBL_Msk)
 			fatal_error_address(ERROR_GENERAL_VECTOR_TABLE_READ_FAULT, caller_address);
 		//wrong sys call

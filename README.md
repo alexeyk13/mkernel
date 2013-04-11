@@ -51,6 +51,13 @@ ARM7 features:
 
 History
 =======
+0.1.5
++ sd card module (STM32F2)
++ usb core module (STM32F2)
++ usb device module (STM32F2)
++ SCSI block module
++ USB mass storage class
+
 0.1.4
 + new module: software timers, running in independent thread
 + keyboard module new functions: keyboard_wait_for_key, keyboard_has_messages

@@ -40,8 +40,8 @@
 
 //--------------------- USART hw config -----------------------------------------
 //each bit for port
-//#define USART_RX_DISABLE_MASK_DEF				(1 << UART_1)
-#define USART_RX_DISABLE_MASK_DEF				(0)
+#define USART_RX_DISABLE_MASK_DEF				(1 << 0)
+//#define USART_RX_DISABLE_MASK_DEF				(0)
 #define USART_TX_DISABLE_MASK_DEF				(0)
 //USART1
 /*

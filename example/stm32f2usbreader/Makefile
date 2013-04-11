@@ -1,3 +1,7 @@
+#==========================================================
+#	File:	Makefile for Cortex-M3
+#	Date:	2011-01-02
+#==========================================================
 OPTIMIZATION			= s
 
 #----------------------------------------------------------
@@ -12,46 +16,53 @@ OBJDUMP					= $(CROSS)objdump
 NM							= $(CROSS)nm
 
 #----------------------------------------------------------
-EXT_OSCILLATOR_FREQ	= 25000000
+EXT_OSCILLATOR_FREQ	= 24000000
 MCU_NAME					= STM32F215RG
 TARGET_NAME				= stm32usb
 #----------------------------------------------------------
 BUILD_DIR				= build
 OUTPUT_DIR				= output
-KERNEL					= ../mkernel
+KERNEL					= ../..
 LDS_SCRIPT				= $(KERNEL)/arch/arm.ld.S
 #----------------------------------------------------------
-LIBS_DIR					= ../libs
+LIBS_DIR					= ../../../libs
 CMSIS_DIR				= $(LIBS_DIR)/CMSIS
 #CMSIS_DEVICE_DIR		= $(CMSIS_DIR)/Device/ST/STM32F10x
 CMSIS_DEVICE_DIR		= $(CMSIS_DIR)/Device/ST/STM32F2xx
 #CMSIS_DEVICE_DIR		= $(CMSIS_DIR)/Device/ST/STM32F4xx
 #----------------------------------------------------------
 OEM_LIBS					= $(CMSIS_DIR)/Include $(CMSIS_DEVICE_DIR)/Include
-ARCH						= arch arch/cortex_m3 arch/cortex_m3/stm32f2xx $(KERNEL)/arch $(KERNEL)/arch/cortex_m3 $(KERNEL)/arch/cortex_m3/stm
+ARCH						= arch $(KERNEL)/arch $(KERNEL)/arch/cortex_m3 $(KERNEL)/arch/cortex_m3/stm
 DRVS						= $(KERNEL)/drv_if
-MOD						= $(KERNEL)/mod/console $(KERNEL)/mod/dbg_console $(KERNEL)/mod/keyboard
-TASKS						= 
-INCLUDE_FOLDERS		= $(KERNEL)/lib config $(KERNEL)/core $(DRVS) $(MOD) $(OEM_LIBS) $(TASKS) $(ARCH)
+MOD						= $(KERNEL)/mod/console $(KERNEL)/mod/dbg_console $(KERNEL)/mod/keyboard $(KERNEL)/mod/sw_timer
+MOD						+= mod $(KERNEL)/mod/usb_msc $(KERNEL)/mod/storage $(KERNEL)/mod/scsi $(KERNEL)/mod/usbd $(KERNEL)/mod/sd_card mod/blinker mod/adc
+MOD						+= mod/gpio_user mod/usb_desc_user mod/flash mod/aes mod/crypto_storage
+TASKS						=
+INCLUDE_FOLDERS		= $(KERNEL)/lib config $(KERNEL)/core $(DRVS) $(MOD) $(STARTUP_FILE_DIR) $(OEM_LIBS) $(TASKS) $(ARCH)
 
 INCLUDES					= $(INCLUDE_FOLDERS:%=-I%)
 VPATH					  += $(INCLUDE_FOLDERS) $(BUILD_DIR)
 #----------------------------------------------------------
-SRC_AS					= startup_cortexm.S delay_cortex_m3.S
+SRC_AS					= delay_cortex_m3.S
+SRC_AS_C					= startup_cortexm.S
 
 SRC_C						= cortex_m3.c
 #arch
-SRC_C					  += rcc_stm32f2.c gpio_stm32f2.c timer_stm32.c uart_stm32.c dma_stm32.c rand_stm32f2.c
+SRC_C					  += rcc_stm32f2.c gpio_stm32.c timer_stm32.c uart_stm32.c usb_stm32f2xx.c sdio_stm32f2xx.c dma_stm32.c rand_stm32f2.c
 #core
 SRC_C					  += startup.c mem_pool.c mem.c mem_private.c error.c sys_call.c sys_time.c sys_time_private.c sys_timer.c thread.c thread_private.c
 SRC_C					  += mutex.c mutex_private.c event.c event_private.c sem.c sem_private.c queue.c queue_private.c
 #lib
 SRC_C					  += dlist.c time.c printf.c rand.c
 #mod
-SRC_C					  += console.c dbg_console_private.c dbg_console.c keyboard.c
-#SRC_C					  += main.c
+SRC_C					  += gpio_user.c console.c dbg_console_private.c dbg_console.c sw_timer.c
+SRC_C					  += main.c
 
-OBJ						= $(SRC_AS:%.S=%.o) $(SRC_C:%.c=%.o)
+SRC_C					  += usb_desc.c usbd.c usbd_core.c usbd_core_io.c sd_card.c sd_card_cmd.c
+SRC_C					  += usb_msc.c usb_msc_io.c scsi.c scsi_io.c scsi_page.c storage.c
+SRC_C					  += usb_desc_user.c
+
+OBJ						= $(SRC_AS_C:%.S=%.o) $(SRC_AS:%.S=%.o) $(SRC_C:%.c=%.o)
 #----------------------------------------------------------
 DEFINES					= -DHSE_VALUE=$(EXT_OSCILLATOR_FREQ) -D$(MCU_NAME)
 PWD						= $(shell pwd)
@@ -82,6 +93,11 @@ all: $(TARGET_NAME).elf
 	@-mkdir -p $(BUILD_DIR)
 	@echo CC: $<
 	@$(GCC) $(FLAGS_CC) -c ./$< -o $(BUILD_DIR)/$@
+
+.s.o:
+	@-mkdir -p $(BUILD_DIR)
+	@echo AS: $<
+	@$(AS) $(FLAGS_AS) ./$< -o $(BUILD_DIR)/$@
 
 .S.o:
 	@-mkdir -p $(BUILD_DIR)
